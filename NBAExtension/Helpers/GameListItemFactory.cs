@@ -51,7 +51,7 @@ internal static class GameListItemFactory
 
         var title = $"{homeTeam.Team.ShortDisplayName} vs. {awayTeam.Team.ShortDisplayName}";
 
-        var tags = new List<Tag> { new Tag(gameDate), new Tag(gameTime) };
+        var tags = new List<Tag>(); 
 
         if (competition.Status?.Period != 0)
         {
@@ -84,8 +84,10 @@ internal static class GameListItemFactory
             }
             tags.Add(homeTag);
             tags.Add(awayTag);
-            tags.Add(new Tag(time));
         }
+
+        tags.Add(new Tag(gameDate));
+        tags.Add(new Tag(gameTime));
 
         var command = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN" };
         var listItem = new ListItem(command)
