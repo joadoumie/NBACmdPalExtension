@@ -16,7 +16,7 @@ using NBAExtension.Data;
 
 namespace NBAExtension;
 
-internal sealed partial class NBAExtensionPage : DynamicListPage, IDisposable
+internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposable
 {
     private static readonly HttpClient _httpClient = new();
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -25,12 +25,11 @@ internal sealed partial class NBAExtensionPage : DynamicListPage, IDisposable
     private DateTime _lastFetch = DateTime.MinValue;
     private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1";
 
-    public NBAExtensionPage()
+    public ViewGamesDynamicPage()
     {
         Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"); 
         Title = "View Games";
         Name = "View Games";
-        IsLoading = true;
     }
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
