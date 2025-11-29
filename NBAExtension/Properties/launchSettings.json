@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "NBAExtension (Package)": {
+      "commandName": "MsixPackage",
+      "doNotLaunchApp": true
+    },
+    "NBAExtension (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
