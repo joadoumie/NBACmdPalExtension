@@ -45,7 +45,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
     {
         IsLoading = true;
         var delta = DateTime.UtcNow - _lastFetch;
-        if (_lastGames.Count == 0 || delta.Minutes > 5)
+        if (delta.Minutes > 5)
         {
             var task = FetchGamesAsync();
             task.ConfigureAwait(false);
@@ -80,6 +80,10 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
         }
 
         IsLoading = false;
+        if (results.Length == 0 && string.IsNullOrEmpty(searchText))
+        {
+            return [new ListItem(new NoOpCommand()) { Title = "No games found." },];
+        }
         return results;
     }
 
