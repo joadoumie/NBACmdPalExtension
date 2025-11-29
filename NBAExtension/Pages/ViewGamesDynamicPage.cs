@@ -213,7 +213,6 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 
             if (competition.Status?.Type?.Completed == true)
             {
-                time = "Final";
                 if (int.TryParse(homeScore, NumberStyles.Integer, CultureInfo.InvariantCulture, out var homeScoreValue) &&
                     int.TryParse(awayScore, NumberStyles.Integer, CultureInfo.InvariantCulture, out var awayScoreValue))
                 {
@@ -234,7 +233,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
             tags.Add(new Tag(time));
         }
 
-        var command = new NoOpCommand();
+        var command = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN" };
         var listItem = new ListItem(command)
         {
             Title = title,
@@ -258,10 +257,10 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
             var estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
             var estTime = TimeZoneInfo.ConvertTimeFromUtc(gameDateTime.ToUniversalTime(), estZone);
 
-            var dayOfWeek = estTime.ToString("dddd");  // e.g., "Friday"
+            var dayOfWeek = estTime.ToString("dddd", CultureInfo.InvariantCulture);  // e.g., "Friday"
 
-            var date = $"{dayOfWeek}, {estTime.ToString("MMM. d yyyy")}";
-            var time = estTime.ToString("h:mm tt") + " EST";
+            var date = $"{dayOfWeek}, {estTime.ToString("MMM. d yyyy", CultureInfo.InvariantCulture)}";
+            var time = estTime.ToString("h:mm tt", CultureInfo.InvariantCulture) + " EST";
 
             return (date, time);
         }
