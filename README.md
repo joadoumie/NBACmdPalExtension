@@ -53,8 +53,8 @@ Browse all NBA games for the upcoming week with rich details:
 
 ## 🎮 Usage
 
-1. Open **Windows Command Palette** (typically `Win + R` or configured hotkey)
-2. Type `NBA` or search for **"View Games"**
+1. Open **Windows Command Palette** (must be installed via PowerToys)
+2. Type `NBA` or search for **"View Upcoming NBA Games"**
 3. Browse upcoming games sorted by date
 4. Use **fuzzy search** to filter by team name (e.g., type "lakers" or "LAL")
 5. Click any game to **view full details on ESPN**
