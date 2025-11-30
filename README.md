@@ -35,7 +35,7 @@ Browse all NBA games for the upcoming week with rich details:
 - **Direct links** to ESPN for full game details
 
 <div align="center">
-  <img width="1578" alt="NBA Extension Screenshot" src="https://github.com/user-attachments/assets/c3e5e40f-b5cf-4edd-8645-2f905593210c" />
+  <img width="1380" height="830" alt="image" src="https://github.com/user-attachments/assets/908a8215-e070-4371-bbf4-c5cc12374e26" />
 </div>
 
 ## 🚀 Installation
