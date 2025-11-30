@@ -25,7 +25,22 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
     private readonly List<ListItem> _lastGames = [];
     private readonly Dictionary<ListItem, DateTime> _gameDates = [];
     private DateTime _lastFetch = DateTime.MinValue;
-    private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1";
+    private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1&render=false&device=desktop&userab=18";
+
+    private static string BuildEspnUrl(DateTime date)
+    {
+        // ESPN expects YYYYMMDD, zero-padded
+        var dateParam = date.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+
+        // Mirrors your TS version:
+        // baseUrl + params: xhr=1, render=false, device=desktop, userab=18
+        return $"https://cdn.espn.com/core/nba/schedule" +
+               $"?dates={dateParam}" +
+               $"&xhr=1" +
+               $"&render=false" +
+               $"&device=desktop" +
+               $"&userab=18";
+    }
 
     public ViewGamesDynamicPage()
     {
@@ -65,10 +80,10 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
                 .Select(item => new
                 {
                     Item = item,
-                    MatchResult = StringMatcher.FuzzySearch(searchText, item.Title),
+                    MatchResult = FuzzyStringMatcher.ScoreFuzzy(searchText, item.Title),
                     Date = _gameDates.TryGetValue(item, out var date) ? date : DateTime.MaxValue
                 })
-                .Where(x => x.MatchResult.Score > 0) // Only show matches
+                .Where(x => x.MatchResult > 0) // Only show matches
                 .OrderBy(x => x.Date) // Sort by date first
                 .Select(x => x.Item)
                 .ToArray();
@@ -170,6 +185,14 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 }
 
 [JsonSerializable(typeof(Game))]
+[JsonSerializable(typeof(Competition))]
+[JsonSerializable(typeof(Competitor))]
+[JsonSerializable(typeof(Team))]
+[JsonSerializable(typeof(TeamRecord))]
+[JsonSerializable(typeof(GameStatus))]
+[JsonSerializable(typeof(StatusType))]
+[JsonSerializable(typeof(LineScore))]
+[JsonSerializable(typeof(Logo))]
 internal partial class GameJsonContext : JsonSerializerContext
 {
 }

@@ -67,6 +67,9 @@ internal class Competitor
 
     [JsonPropertyName("team")]
     public Team? Team { get; set; }
+
+    [JsonPropertyName("records")]
+    public List<TeamRecord>? Records { get; set; }
 }
 
 internal class LineScore
@@ -136,4 +139,16 @@ internal class Logo
 
     [JsonPropertyName("rel")]
     public List<string>? Rel { get; set; }
+}
+
+internal class TeamRecord
+{
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("summary")]
+    public string? Summary { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
 }

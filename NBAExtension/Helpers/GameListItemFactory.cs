@@ -49,7 +49,25 @@ internal static class GameListItemFactory
         // Format the game date and time
         var (gameDate, gameTime) = FormatGameDateTime(game.Date);
 
-        var title = $"{homeTeam.Team.ShortDisplayName} vs. {awayTeam.Team.ShortDisplayName}";
+        // Get team records
+        var homeRecord = GetTeamRecord(homeTeam);
+        var awayRecord = GetTeamRecord(awayTeam);
+
+        // Build title with records
+        var homeTeamName = homeTeam.Team.ShortDisplayName;
+        var awayTeamName = awayTeam.Team.ShortDisplayName;
+
+        if (!string.IsNullOrEmpty(homeRecord))
+        {
+            homeTeamName += $" ({homeRecord})";
+        }
+
+        if (!string.IsNullOrEmpty(awayRecord))
+        {
+            awayTeamName += $" ({awayRecord})";
+        }
+
+        var title = $"{homeTeamName} vs. {awayTeamName}";
 
         var tags = new List<Tag>(); 
 
@@ -98,6 +116,25 @@ internal static class GameListItemFactory
         };
 
         return listItem;
+    }
+
+    /// <summary>
+    /// Gets the team record from the competitor.
+    /// </summary>
+    /// <param name="competitor">The competitor.</param>
+    /// <returns>The team record string (e.g., "14-4"), or empty string if not available.</returns>
+    private static string GetTeamRecord(Competitor competitor)
+    {
+        if (competitor.Records == null || competitor.Records.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        // Look for the overall record (type "total")
+        var overallRecord = competitor.Records.FirstOrDefault(r => 
+            r.Type?.Equals("total", StringComparison.OrdinalIgnoreCase) == true);
+
+        return overallRecord?.Summary ?? string.Empty;
     }
 
     /// <summary>

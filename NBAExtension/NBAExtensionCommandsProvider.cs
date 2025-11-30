@@ -17,6 +17,7 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
         _commands = [
             new CommandItem(new ViewGamesDynamicPage()) { Title = DisplayName },
+            new CommandItem(new SampleGalleryListPage()) { Title = "Sample Gallery List Page" },
         ];
     }
 
