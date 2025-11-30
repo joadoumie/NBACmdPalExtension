@@ -13,7 +13,7 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
 
     public NBAExtensionCommandsProvider()
     {
-        DisplayName = "View NBA Games";
+        DisplayName = "View Upcoming NBA Games";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
         _commands = [
             new CommandItem(new ViewGamesDynamicPage()) { Title = DisplayName },

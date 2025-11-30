@@ -27,6 +27,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
     private DateTime _lastFetch = DateTime.MinValue;
     private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1&render=false&device=desktop&userab=18";
 
+    // TODO: Use date parameter to fetch specific dates if needed and allow user to set date preferences?
     private static string BuildEspnUrl(DateTime date)
     {
         // ESPN expects YYYYMMDD, zero-padded
