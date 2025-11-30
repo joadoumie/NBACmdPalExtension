@@ -62,16 +62,8 @@ Browse all NBA games for the upcoming week with rich details:
 ### Search Tips
 
 - Type team names: `lakers`, `warriors`, `celtics`
-- Use abbreviations: `LAL`, `GSW`, `BOS`
+- Using abbreviations: `LAL`, `GSW`, `BOS` is **NOT CURRENTLY SUPPORTED**... and idk if it ever will be? maybe?
 - Search by matchup: `lakers vs warriors`
-
-## 🛠️ Technology Stack
-
-- **.NET 9.0** - Modern .NET runtime
-- **C# 13.0** - Latest language features
-- **System.Text.Json** - High-performance JSON serialization with source generation
-- **Microsoft.CommandPalette.Extensions** - Command Palette SDK
-- **ESPN API** - Live game data
 
 ### Key Components
 
@@ -87,10 +79,8 @@ Browse all NBA games for the upcoming week with rich details:
 - [x] Live score updates
 - [x] Fuzzy search functionality
 - [ ] User preferences for favorite teams
-- [ ] Customizable date ranges
 - [ ] Player stats integration
 - [ ] Team standings
-- [ ] Playoff bracket visualization
 - [ ] WinGet distribution
 - [ ] Auto-refresh for live games
 
@@ -110,8 +100,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **ESPN** for providing the game data API
-- **Microsoft** for the Command Palette Extensions SDK
+- **Microsoft** friends for the Command Palette Extensions SDK. So much fun to build with.
 - NBA fans everywhere 🏀
 
 ## 📞 Support
