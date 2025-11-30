@@ -1,7 +1,129 @@
-All the things you may desire for the NBA right at your fingertips.
+﻿# NBA Command Palette Extension
 
-A work in progress, but slowly coming together -- next stop == publish to WinGet.
+<div align="center">
 
-Right now this extension only supports the 'View Upcoming Games' command which will show all upcoming NBA games over the next week
+![NBA Logo](https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=128&h=128&transparent=true)
 
-<img width="1578" height="949" alt="image" src="https://github.com/user-attachments/assets/c3e5e40f-b5cf-4edd-8645-2f905593210c" />
+**All the things you may desire for the NBA right at your fingertips.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![.NET 9](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/download)
+[![C# 13.0](https://img.shields.io/badge/C%23-13.0-blue.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+
+</div>
+
+---
+
+## 📋 Overview
+
+NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, and schedules without leaving your workflow.
+
+> **⚠️ Work in Progress**: This extension is actively being developed. Next milestone: publish to WinGet!
+
+## ✨ Features
+
+### 🏀 View Upcoming Games
+
+Browse all NBA games for the upcoming week with rich details:
+
+- **Live game information** with team records (e.g., Lakers (14-4) vs. Pelicans (4-14))
+- **Real-time scores** for games in progress
+- **Game status indicators** with quarter and time remaining
+- **Team logos** and visual indicators
+- **Smart search** with fuzzy matching to quickly find your favorite teams
+- **Date and time** in EST with automatic timezone conversion
+- **Direct links** to ESPN for full game details
+
+<div align="center">
+  <img width="1578" alt="NBA Extension Screenshot" src="https://github.com/user-attachments/assets/c3e5e40f-b5cf-4edd-8645-2f905593210c" />
+</div>
+
+## 🚀 Installation
+
+### Option 1: From Source (Current)
+
+1. **Clone the repository**
+2. **Open in Visual Studio**: Open the solution file in Visual Studio 2022 or newer.
+3. **Deploy the extension**
+   - Open the project in Visual Studio 2022+
+   - Set the build configuration to **Debug** or **Release**
+   - Build and run (F5)
+
+### Option 2: WinGet (Coming Soon)
+
+## 🎮 Usage
+
+1. Open **Windows Command Palette** (typically `Win + R` or configured hotkey)
+2. Type `NBA` or search for **"View Games"**
+3. Browse upcoming games sorted by date
+4. Use **fuzzy search** to filter by team name (e.g., type "lakers" or "LAL")
+5. Click any game to **view full details on ESPN**
+
+### Search Tips
+
+- Type team names: `lakers`, `warriors`, `celtics`
+- Use abbreviations: `LAL`, `GSW`, `BOS`
+- Search by matchup: `lakers vs warriors`
+
+## 🛠️ Technology Stack
+
+- **.NET 9.0** - Modern .NET runtime
+- **C# 13.0** - Latest language features
+- **System.Text.Json** - High-performance JSON serialization with source generation
+- **Microsoft.CommandPalette.Extensions** - Command Palette SDK
+- **ESPN API** - Live game data
+
+### Key Components
+
+- **Source Generation**: Uses JSON source generation for AOT compatibility and performance
+- **Caching**: 5-minute cache for API responses to reduce load
+- **Fuzzy Search**: Smart search algorithm for quick team filtering
+- **Dynamic Updates**: Real-time score updates for live games
+
+## 🗺️ Roadmap
+
+- [x] View upcoming games for the week
+- [x] Display team records
+- [x] Live score updates
+- [x] Fuzzy search functionality
+- [ ] User preferences for favorite teams
+- [ ] Customizable date ranges
+- [ ] Player stats integration
+- [ ] Team standings
+- [ ] Playoff bracket visualization
+- [ ] WinGet distribution
+- [ ] Auto-refresh for live games
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **ESPN** for providing the game data API
+- **Microsoft** for the Command Palette Extensions SDK
+- NBA fans everywhere 🏀
+
+## 📞 Support
+
+If you encounter any issues or have suggestions:
+
+- 🐛 [Report a bug](https://github.com/joadoumie/NBACmdPalExtension/issues)
+- 💡 [Request a feature](https://github.com/joadoumie/NBACmdPalExtension/issues)
+- ⭐ Star this repository if you find it useful!
+
+---
+
+<div align="center">
+Made with ❤️ for NBA fans
+</div>
