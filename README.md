@@ -82,6 +82,7 @@ Browse all NBA games for the upcoming week with rich details:
 - [ ] Player stats integration
 - [ ] Team standings
 - [ ] WinGet distribution
+- [ ] Add releases to GitHub (no clue how to do this yet)
 - [ ] Auto-refresh for live games
 
 ## 🤝 Contributing
