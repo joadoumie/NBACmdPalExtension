@@ -114,5 +114,5 @@ If you encounter any issues or have suggestions:
 ---
 
 <div align="center">
-Made with ❤️ for NBA fans
+Made with ❤️ by NBA fans for NBA fans
 </div>
