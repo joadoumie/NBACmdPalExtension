@@ -76,11 +76,12 @@ internal static class GameListItemFactory
         {
             var homeScore = homeTeam.Score ?? "0";
             var awayScore = awayTeam.Score ?? "0";
-            var time = $"Q{competition.Status?.Period}: {competition.Status?.DisplayClock}";
+            var currentPeriod = $"Q{competition.Status?.Period}: {competition.Status?.DisplayClock}";
             var awayIconUrl = GetTeamLogo(awayTeam.Team);
 
             var homeTag = new Tag(homeScore);
             var awayTag = new Tag(awayScore);
+            var periodTag = new Tag(currentPeriod);
             homeTag.Icon = new IconInfo(homeIconUrl);
             awayTag.Icon = new IconInfo(awayIconUrl);
 
@@ -103,6 +104,7 @@ internal static class GameListItemFactory
             }
             tags.Add(homeTag);
             tags.Add(awayTag);
+            tags.Add(periodTag);
         }
 
         tags.Add(new Tag(gameDate));
