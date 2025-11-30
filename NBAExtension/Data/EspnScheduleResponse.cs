@@ -70,6 +70,9 @@ internal class Competitor
 
     [JsonPropertyName("records")]
     public List<TeamRecord>? Records { get; set; }
+
+    [JsonPropertyName("leaders")]
+    public List<LeaderCategory>? Leaders { get; set; }
 }
 
 internal class LineScore
@@ -151,4 +154,88 @@ internal class TeamRecord
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
+}
+
+internal class LeaderCategory
+{
+    [JsonPropertyName("shortDisplayName")]
+    public string? ShortDisplayName { get; set; }
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("abbreviation")]
+    public string? Abbreviation { get; set; }
+
+    [JsonPropertyName("leaders")]
+    public List<Leader>? Leaders { get; set; }
+}
+
+internal class Leader
+{
+    [JsonPropertyName("displayValue")]
+    public string? DisplayValue { get; set; }
+
+    [JsonPropertyName("value")]
+    public double Value { get; set; }
+
+    [JsonPropertyName("athlete")]
+    public Athlete? Athlete { get; set; }
+
+    [JsonPropertyName("team")]
+    public LeaderTeam? Team { get; set; }
+}
+
+internal class Athlete
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("shortName")]
+    public string? ShortName { get; set; }
+
+    [JsonPropertyName("fullName")]
+    public string? FullName { get; set; }
+
+    [JsonPropertyName("headshot")]
+    public string? Headshot { get; set; }
+
+    [JsonPropertyName("jersey")]
+    public string? Jersey { get; set; }
+
+    [JsonPropertyName("position")]
+    public Position? Position { get; set; }
+
+    [JsonPropertyName("active")]
+    public bool Active { get; set; }
+
+    [JsonPropertyName("links")]
+    public List<AthleteLink>? Links { get; set; }
+}
+
+internal class Position
+{
+    [JsonPropertyName("abbreviation")]
+    public string? Abbreviation { get; set; }
+}
+
+internal class AthleteLink
+{
+    [JsonPropertyName("rel")]
+    public List<string>? Rel { get; set; }
+
+    [JsonPropertyName("href")]
+    public string? Href { get; set; }
+}
+
+internal class LeaderTeam
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
 }

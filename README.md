@@ -16,7 +16,7 @@
 
 ## 📋 Overview
 
-NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, and schedules without leaving your workflow.
+NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, and player stats without leaving your workflow.
 
 > **⚠️ Work in Progress**: This extension is actively being developed. Next milestone: publish to WinGet!
 
@@ -37,6 +37,14 @@ Browse all NBA games for the upcoming week with rich details:
 <div align="center">
   <img width="1380" height="830" alt="image" src="https://github.com/user-attachments/assets/908a8215-e070-4371-bbf4-c5cc12374e26" />
 </div>
+
+### 📊 Team & Game Leaders
+
+View statistical leaders for any matchup:
+
+- **View Team Leaders** for upcoming games - see season leaders for both teams (PPG, RPG, APG)
+- **View Game Leaders** for live/completed games - see game-specific performance stats
+- **Player headshots** and details (jersey number, position)
 
 ## 🚀 Installation
 
@@ -71,6 +79,7 @@ Browse all NBA games for the upcoming week with rich details:
 - **Caching**: 5-minute cache for API responses to reduce load
 - **Fuzzy Search**: Smart search algorithm for quick team filtering
 - **Dynamic Updates**: Real-time score updates for live games
+- **Context-Aware Commands**: Different leader views based on game status
 
 ## 🗺️ Roadmap
 
@@ -78,6 +87,8 @@ Browse all NBA games for the upcoming week with rich details:
 - [x] Display team records
 - [x] Live score updates
 - [x] Fuzzy search functionality
+- [x] View team leaders (season stats)
+- [x] View game leaders (in-progress/completed games)
 - [ ] User preferences for favorite teams
 - [ ] Player stats integration
 - [ ] Team standings

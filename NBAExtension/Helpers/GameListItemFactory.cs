@@ -9,6 +9,7 @@ using System.Linq;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data;
+using NBAExtension.Pages;
 
 namespace NBAExtension.Helpers;
 
@@ -107,15 +108,66 @@ internal static class GameListItemFactory
         tags.Add(new Tag(gameDate));
         tags.Add(new Tag(gameTime));
 
-        var command = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN" };
-        var listItem = new ListItem(command)
+        // Create commands list
+        var viewOnEspnCommand = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN" };
+        var moreCommands = new List<CommandContextItem>();
+
+        // Add leaders command if data is available
+        if (HasLeaderData(competition))
+        {
+            // Determine if game has started or is completed
+            var gameStatus = GetGameStatus(competition);
+            var commandName = gameStatus switch
+            {
+                GameState.InProgress => "View Game Leaders",
+                GameState.Completed => "View Game Leaders",
+                GameState.Scheduled => "View Team Leaders",
+                _ => "View Team Leaders"
+            };
+
+            moreCommands.Add(new CommandContextItem(new TeamLeadersPage(game) { Name = commandName }));
+        }
+
+        var listItem = new ListItem(viewOnEspnCommand)
         {
             Title = title,
             Icon = new IconInfo(GetTeamLogo(homeTeam.Team)),
             Tags = tags.ToArray(),
+            MoreCommands = moreCommands.ToArray() 
         };
 
         return listItem;
+    }
+
+    /// <summary>
+    /// Determines the current state of a game.
+    /// </summary>
+    /// <param name="competition">The competition.</param>
+    /// <returns>The game state.</returns>
+    private static GameState GetGameStatus(Competition competition)
+    {
+        if (competition.Status?.Type?.Completed == true)
+        {
+            return GameState.Completed;
+        }
+
+        // If period is greater than 0, game has started
+        if (competition.Status?.Period > 0)
+        {
+            return GameState.InProgress;
+        }
+
+        return GameState.Scheduled;
+    }
+
+    /// <summary>
+    /// Checks if the competition has leader data available.
+    /// </summary>
+    /// <param name="competition">The competition.</param>
+    /// <returns>True if leader data is available, false otherwise.</returns>
+    private static bool HasLeaderData(Competition competition)
+    {
+        return competition.Competitors?.Any(c => c.Leaders?.Count > 0) == true;
     }
 
     /// <summary>
@@ -176,5 +228,15 @@ internal static class GameListItemFactory
         }
 
         return (dateString, "Time TBA");
+    }
+
+    /// <summary>
+    /// Represents the state of a game.
+    /// </summary>
+    private enum GameState
+    {
+        Scheduled,
+        InProgress,
+        Completed
     }
 }
