@@ -111,7 +111,7 @@ internal static class GameListItemFactory
         tags.Add(new Tag(gameTime));
 
         // Create commands list
-        var viewOnEspnCommand = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN" };
+        var viewOnEspnCommand = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN", Result = CommandResult.Dismiss() };
         var moreCommands = new List<CommandContextItem>();
 
         // Add leaders command if data is available

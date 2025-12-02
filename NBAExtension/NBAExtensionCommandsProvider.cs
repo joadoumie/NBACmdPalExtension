@@ -11,12 +11,21 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
 {
     private readonly ICommandItem[] _commands;
 
+    // Return more commands like GH links etc. 
+    private static IContextItem[] GetAboutContextItems()
+    {
+        return [
+            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new") { Name = "Request New Feature", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83C\uDFC0") },
+            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new") { Name = "Report a Bug", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83D\uDC1B") },
+        ];
+    }
+
     public NBAExtensionCommandsProvider()
     {
         DisplayName = "View Upcoming NBA Games";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
         _commands = [
-            new CommandItem(new ViewGamesDynamicPage()) { Title = DisplayName },
+            new CommandItem(new ViewGamesDynamicPage()) { Title = DisplayName, MoreCommands = GetAboutContextItems() },
             new CommandItem(new SampleGalleryListPage()) { Title = "Sample Gallery List Page" },
         ];
     }
