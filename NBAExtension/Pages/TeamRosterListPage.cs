@@ -143,7 +143,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
             var listItem = new ListItem(command)
             {
                 Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
-                Subtitle = descriptionParts.Count > 0 ? string.Join(" • ", descriptionParts) : string.Empty,
+                Subtitle = descriptionParts.Count > 0 ? string.Join(" â€¢ ", descriptionParts) : string.Empty,
                 Icon = new IconInfo(athlete.Headshot?.Href ?? _teamLogo),
                 Tags = tags.Count > 0 ? tags.ToArray() : Array.Empty<Tag>(),
                 MoreCommands = moreCommands.Length > 0 ? moreCommands : Array.Empty<IContextItem>(),
@@ -302,6 +302,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
         var linkConfigs = new[]
         {
             new { Rel = "stats", Name = "View Stats", Icon = "\uE9D9" }, // Chart icon
+            new { Rel = "advancedstats", Name = "View Advanced Stats", Icon = "\uE9D2" }, // AreaChart icon
             new { Rel = "gamelog", Name = "View Game Log", Icon = "\uE81C" }, // Calendar icon
             new { Rel = "news", Name = "View News", Icon = "\uE789" }, // News icon
             new { Rel = "bio", Name = "View Biography", Icon = "\uE77B" }, // Contact icon
@@ -310,7 +311,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
 
         foreach (var config in linkConfigs)
         {
-            var link = athlete.Links.FirstOrDefault(l => 
+            var link = athlete.Links.FirstOrDefault(l =>
                 l.Rel?.Any(r => r.Equals(config.Rel, StringComparison.OrdinalIgnoreCase)) == true);
 
             if (link != null && !string.IsNullOrEmpty(link.Href))
@@ -324,9 +325,34 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
                     Icon = new IconInfo(config.Icon)
                 });
             }
+            else if (config.Rel == "advancedstats" && !string.IsNullOrEmpty(athlete.Id))
+            {
+                // Fallback: Construct advanced stats URL manually if not provided by API
+                var nameSlug = CreateUrlSlug(athlete.DisplayName ?? athlete.FullName ?? "player");
+                var advancedStatsUrl = $"https://www.espn.com/nba/player/advancedstats/_/id/{athlete.Id}/{nameSlug}";
+
+                contextItems.Add(new CommandContextItem(new OpenUrlCommand(advancedStatsUrl)
+                {
+                    Name = config.Name,
+                    Result = CommandResult.Dismiss()
+                })
+                {
+                    Icon = new IconInfo(config.Icon)
+                });
+            }
         }
 
         return contextItems.ToArray();
+    }
+
+    private static string CreateUrlSlug(string name)
+    {
+        // Convert name to URL-friendly slug (e.g., "Nick Smith Jr" -> "nick-smith-jr")
+        return name.ToLowerInvariant()
+                   .Replace(" ", "-")
+                   .Replace(".", "")
+                   .Replace("'", "")
+                   .Trim('-');
     }
 
     private string BuildPlayerBio(RosterAthlete athlete)
