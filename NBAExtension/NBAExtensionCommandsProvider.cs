@@ -15,8 +15,8 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
     private static IContextItem[] GetAboutContextItems()
     {
         return [
-            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new") { Name = "Request New Feature", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83C\uDFC0") },
-            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new") { Name = "Report a Bug", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83D\uDC1B") },
+            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new?template=feature_request.yml") { Name = "Request New Feature", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83C\uDFC0") },
+            new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension/issues/new?template=bug_report.yml") { Name = "Report a Bug", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\uD83D\uDC1B") },
             new CommandContextItem(new OpenUrlCommand("https://github.com/joadoumie/NBACmdPalExtension") { Name = "View Source Code", Result = CommandResult.Dismiss() }) { Icon = new IconInfo("\u2328\uFE0F") },
         ];
     }
