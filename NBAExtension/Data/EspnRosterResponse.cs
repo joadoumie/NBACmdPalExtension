@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace NBAExtension.Data;
+namespace NBAExtension.Data.EspnRosterResponse;
 
 internal class EspnRosterResponse
 {
@@ -123,3 +123,23 @@ internal class RosterTeam
     [JsonPropertyName("color")]
     public string? Color { get; set; }
 }
+
+internal class Position
+{
+    [JsonPropertyName("abbreviation")]
+    public string? Abbreviation { get; set; }
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+}
+
+internal class AthleteLink
+{
+    [JsonPropertyName("rel")]
+    public List<string>? Rel { get; set; }
+
+    [JsonPropertyName("href")]
+    public string? Href { get; set; }
+}
+

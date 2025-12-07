@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
-using NBAExtension.Data;
+using NBAExtension.Data.EspnScheduleResponse;
 using NBAExtension.Helpers;
 using System.Text.Json.Serialization;
 

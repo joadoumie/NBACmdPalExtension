@@ -8,7 +8,7 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
-using NBAExtension.Data;
+using NBAExtension.Data.EspnScheduleResponse;
 using NBAExtension.Pages;
 
 namespace NBAExtension.Helpers;

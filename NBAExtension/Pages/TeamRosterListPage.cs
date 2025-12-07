@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
-using NBAExtension.Data;
+using NBAExtension.Data.EspnRosterResponse;
 using NBAExtension.Helpers;
 
 namespace NBAExtension.Pages;
@@ -33,6 +33,7 @@ internal sealed partial class TeamRosterListPage : ListPage
 
         Title = $"{_teamName} Roster";
         Icon = new IconInfo(_teamLogo);
+        ShowDetails = true; // Enable details view
     }
 
     public override IListItem[] GetItems()
@@ -73,24 +74,17 @@ internal sealed partial class TeamRosterListPage : ListPage
                 tags.Add(new Tag($"#{athlete.Jersey}"));
             }
 
-            // Add experience tag
-            if (athlete.Experience != null)
-            {
-                var yearsText = athlete.Experience.Years == 0 ? "Rookie" : 
-                               athlete.Experience.Years == 1 ? "1 Year" : 
-                               $"{athlete.Experience.Years} Years";
-                tags.Add(new Tag(yearsText));
-            }
-
             // Add injury status tag if injured
             if (athlete.Injuries != null && athlete.Injuries.Count > 0)
             {
                 var injury = athlete.Injuries.FirstOrDefault();
                 if (injury != null && !string.IsNullOrEmpty(injury.Status))
                 {
-                    var injuryTag = new Tag(injury.Status);
-                    injuryTag.Background = ColorHelpers.FromArgb(255, 220, 53, 69); // Red background
-                    injuryTag.Foreground = ColorHelpers.FromArgb(255, 255, 255, 255); // White text
+                    var injuryTag = new Tag(injury.Status)
+                    {
+                        Background = ColorHelpers.FromArgb(255, 220, 53, 69),
+                        Foreground = ColorHelpers.FromArgb(255, 255, 255, 255)
+                    };
                     tags.Add(injuryTag);
                 }
             }
@@ -106,7 +100,8 @@ internal sealed partial class TeamRosterListPage : ListPage
             {
                 Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
                 Icon = new IconInfo(athlete.Headshot?.Href ?? _teamLogo),
-                Tags = tags.ToArray()
+                Tags = tags.ToArray(),
+                Details = CreatePlayerDetails(athlete)
             };
 
             items.Add(listItem);
@@ -114,6 +109,204 @@ internal sealed partial class TeamRosterListPage : ListPage
 
         System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {items.Count} roster items");
         return items.ToArray();
+    }
+
+    private Details CreatePlayerDetails(RosterAthlete athlete)
+    {
+        var metadata = new List<DetailsElement>();
+
+        // Separator before Basic Bio Info 
+        metadata.Add(new DetailsElement
+        {
+            Key = "Bio",
+            Data = new DetailsSeparator()
+        });
+
+        // Basic Info Section
+        metadata.Add(new DetailsElement
+        {
+            Key = "Position",
+            Data = new DetailsLink 
+            { 
+                Text = athlete.Position?.DisplayName ?? athlete.Position?.Abbreviation ?? "N/A" 
+            }
+        });
+
+        if (!string.IsNullOrEmpty(athlete.Jersey))
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "Jersey Number",
+                Data = new DetailsLink { Text = $"#{athlete.Jersey}" }
+            });
+        }
+
+        // Physical Attributes
+        if (!string.IsNullOrEmpty(athlete.DisplayHeight))
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "Height",
+                Data = new DetailsLink { Text = athlete.DisplayHeight }
+            });
+        }
+
+        if (!string.IsNullOrEmpty(athlete.DisplayWeight))
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "Weight",
+                Data = new DetailsLink { Text = athlete.DisplayWeight }
+            });
+        }
+
+        // Experience & Age
+        if (athlete.Experience != null)
+        {
+            var experienceText = athlete.Experience.Years == 0 ? "Rookie" :
+                                athlete.Experience.Years == 1 ? "1 Year" :
+                                $"{athlete.Experience.Years} Years";
+            metadata.Add(new DetailsElement
+            {
+                Key = "Experience",
+                Data = new DetailsLink { Text = experienceText }
+            });
+        }
+
+        if (athlete.Age > 0)
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "Age",
+                Data = new DetailsLink { Text = $"{athlete.Age} years old" }
+            });
+        }
+
+        // Injury Status
+        if (athlete.Injuries != null && athlete.Injuries.Count > 0)
+        {
+            var injury = athlete.Injuries.FirstOrDefault();
+            if (injury != null && !string.IsNullOrEmpty(injury.Status))
+            {
+                metadata.Add(new DetailsElement
+                {
+                    Key = "Injury Status",
+                    Data = new DetailsTags
+                    {
+                        Tags = new[]
+                        {
+                            new Tag(injury.Status)
+                            {
+                                Background = ColorHelpers.FromArgb(255, 220, 53, 69),
+                                Foreground = ColorHelpers.FromArgb(255, 255, 255, 255),
+                                Icon = new IconInfo("\uE7BA") // Warning icon
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        else
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "Injury Status",
+                Data = new DetailsTags
+                {
+                    Tags = new[]
+                    {
+                       new Tag("Available")
+                       {
+                           // Nice green background with white text
+                           Background = ColorHelpers.FromArgb(255, 40, 167, 69),
+                           Foreground = ColorHelpers.FromArgb(255, 255, 255, 255),
+                           Icon = new IconInfo("\uE73E") // Checkmark icon
+
+                       }
+                   }
+                }
+            });
+        }
+
+
+        // Player Links as Commands
+        var playerCommands = CreatePlayerCommands(athlete);
+        if (playerCommands.Length > 0)
+        {
+            metadata.Add(new DetailsElement
+            {
+                Key = "More Info",
+                Data = new DetailsSeparator(),
+            });
+
+            metadata.Add(new DetailsElement
+            {
+                Key = "Quick Links",
+                Data = new DetailsCommands
+                {
+                    Commands = playerCommands
+                }
+            });
+        }
+
+        var details = new Details
+        {
+            Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
+            Body = BuildPlayerBio(athlete),
+            Metadata = metadata.ToArray()
+        };
+
+        return details;
+    }
+
+    private static ICommand[] CreatePlayerCommands(RosterAthlete athlete)
+    {
+        if (athlete.Links == null || athlete.Links.Count == 0)
+        {
+            return Array.Empty<ICommand>();
+        }
+
+        var commands = new List<ICommand>();
+
+        // Define the links we want to show and their icons
+        var linkConfigs = new[]
+        {
+            new { Rel = "stats", Name = "View Stats", Icon = "\uE9D9" }, // Chart icon
+            new { Rel = "gamelog", Name = "Game Log", Icon = "\uE81C" }, // Calendar icon
+            new { Rel = "news", Name = "News", Icon = "\uE789" }, // News icon
+            new { Rel = "bio", Name = "Biography", Icon = "\uE77B" }, // Contact icon
+            new { Rel = "splits", Name = "Splits", Icon = "\uE8BC" }, // Split view icon
+        };
+
+        foreach (var config in linkConfigs)
+        {
+            var link = athlete.Links.FirstOrDefault(l => 
+                l.Rel?.Any(r => r.Equals(config.Rel, StringComparison.OrdinalIgnoreCase)) == true);
+
+            if (link != null && !string.IsNullOrEmpty(link.Href))
+            {
+                commands.Add(new OpenUrlCommand(link.Href)
+                {
+                    Name = config.Name,
+                    Icon = new IconInfo(config.Icon),
+                    Result = CommandResult.Dismiss()
+                });
+            }
+        }
+
+        return commands.ToArray();
+    }
+
+    private string BuildPlayerBio(RosterAthlete athlete)
+    {
+        var bio = new List<string>();
+
+        // Add player headshot as larger image in markdown
+        var headshotUrl = athlete.Headshot?.Href ?? _teamLogo;
+        bio.Add($"<img src=\"{headshotUrl}\" alt=\"{athlete.DisplayName}\" width=\"250\" />");
+        bio.Add(""); // Empty line for spacing
+
+        return string.Join("\n", bio);
     }
 
     private async Task LoadRosterAsync()

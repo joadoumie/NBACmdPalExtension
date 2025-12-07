@@ -46,6 +46,18 @@ View statistical leaders for any matchup:
 - **View Game Leaders** for live/completed games - see game-specific performance stats
 - **Player headshots** and details (jersey number, position)
 
+### 👥 Team Rosters
+
+Browse complete team rosters with comprehensive player information:
+
+- **Full roster listings** for any NBA team
+- **Player details view** with bio, physical stats, and career information
+- **Injury status tracking** with visual indicators (available/injured)
+- **Player attributes**: position, jersey number, height, weight, age, experience
+- **Quick links** to player stats, game logs, news, biography, and splits on ESPN
+- **Player headshots** and visual presentation
+- **Direct access** from any game listing to view either team's roster
+
 ## 🚀 Installation
 
 ### Option 1: From Source (Current)
@@ -66,6 +78,7 @@ View statistical leaders for any matchup:
 3. Browse upcoming games sorted by date
 4. Use **fuzzy search** to filter by team name (e.g., type "lakers" or "LAL")
 5. Click any game to **view full details on ESPN**
+6. Right-click or use context menu to **view team rosters** or **statistical leaders**
 
 ### Search Tips
 
@@ -80,6 +93,7 @@ View statistical leaders for any matchup:
 - **Fuzzy Search**: Smart search algorithm for quick team filtering
 - **Dynamic Updates**: Real-time score updates for live games
 - **Context-Aware Commands**: Different leader views based on game status
+- **Rich Details View**: Enhanced player and team information with metadata
 
 ## 🗺️ Roadmap
 
@@ -89,6 +103,8 @@ View statistical leaders for any matchup:
 - [x] Fuzzy search functionality
 - [x] View team leaders (season stats)
 - [x] View game leaders (in-progress/completed games)
+- [x] Team roster viewing with detailed player info
+- [x] Player injury status tracking
 - [ ] User preferences for favorite teams
 - [ ] Player stats integration
 - [ ] Team standings

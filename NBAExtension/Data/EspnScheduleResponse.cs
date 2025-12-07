@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace NBAExtension.Data;
+namespace NBAExtension.Data.EspnScheduleResponse;
 
 internal class EspnScheduleResponse
 {
