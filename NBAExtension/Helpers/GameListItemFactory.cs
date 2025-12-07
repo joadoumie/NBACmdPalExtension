@@ -130,6 +130,33 @@ internal static class GameListItemFactory
             moreCommands.Add(new CommandContextItem(new TeamLeadersPage(game) { Name = commandName }));
         }
 
+        // Add roster commands for both teams
+        if (homeTeam.Team.Id != null && !string.IsNullOrEmpty(homeTeam.Team.DisplayName))
+        {
+            var homeRosterPage = new TeamRosterListPage(
+                homeTeam.Team.Id,
+                homeTeam.Team.DisplayName,
+                GetTeamLogo(homeTeam.Team))
+            {
+                Name = $"View {homeTeam.Team.ShortDisplayName} Roster",
+                Icon = new IconInfo(GetTeamLogo(homeTeam.Team))
+            };
+            moreCommands.Add(new CommandContextItem(homeRosterPage));
+        }
+
+        if (awayTeam.Team.Id != null && !string.IsNullOrEmpty(awayTeam.Team.DisplayName))
+        {
+            var awayRosterPage = new TeamRosterListPage(
+                awayTeam.Team.Id,
+                awayTeam.Team.DisplayName,
+                GetTeamLogo(awayTeam.Team))
+            {
+                Name = $"View {awayTeam.Team.ShortDisplayName} Roster",
+                Icon = new IconInfo(GetTeamLogo(awayTeam.Team))
+            };
+            moreCommands.Add(new CommandContextItem(awayRosterPage));
+        }
+
         var listItem = new ListItem(viewOnEspnCommand)
         {
             Title = title,
