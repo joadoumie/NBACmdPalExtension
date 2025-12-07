@@ -58,6 +58,9 @@ Browse complete team rosters with comprehensive player information:
 - **Player headshots** and visual presentation
 - **Direct access** from any game listing to view either team's roster
 
+<img width="1889" height="968" alt="image" src="https://github.com/user-attachments/assets/d80a1605-04fe-4651-b8db-051e4ba0af03" />
+
+
 ## 🚀 Installation
 
 ### Option 1: From Source (Current)
