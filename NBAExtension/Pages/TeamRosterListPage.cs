@@ -61,17 +61,18 @@ internal sealed partial class TeamRosterListPage : ListPage
             }
 
             var tags = new List<Tag>();
+            var descriptionParts = new List<string>();
 
-            // Add position tag
+            // Add position to description
             if (!string.IsNullOrEmpty(athlete.Position?.Abbreviation))
             {
-                tags.Add(new Tag(athlete.Position.Abbreviation));
+                descriptionParts.Add(athlete.Position.Abbreviation);
             }
 
-            // Add jersey number tag
+            // Add jersey number to description
             if (!string.IsNullOrEmpty(athlete.Jersey))
             {
-                tags.Add(new Tag($"#{athlete.Jersey}"));
+                descriptionParts.Add($"#{athlete.Jersey}");
             }
 
             // Add injury status tag if injured
@@ -96,11 +97,16 @@ internal sealed partial class TeamRosterListPage : ListPage
 
             var command = new OpenUrlCommand(playerUrl) { Name = "View Player on ESPN" };
 
+            // Create context items for more commands
+            var moreCommands = CreatePlayerContextItems(athlete);
+
             var listItem = new ListItem(command)
             {
                 Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
+                Subtitle = descriptionParts.Count > 0 ? string.Join(" • ", descriptionParts) : string.Empty,
                 Icon = new IconInfo(athlete.Headshot?.Href ?? _teamLogo),
-                Tags = tags.ToArray(),
+                Tags = tags.Count > 0 ? tags.ToArray() : Array.Empty<Tag>(),
+                MoreCommands = moreCommands.Length > 0 ? moreCommands : null,
                 Details = CreatePlayerDetails(athlete)
             };
 
@@ -228,27 +234,6 @@ internal sealed partial class TeamRosterListPage : ListPage
             });
         }
 
-
-        // Player Links as Commands
-        var playerCommands = CreatePlayerCommands(athlete);
-        if (playerCommands.Length > 0)
-        {
-            metadata.Add(new DetailsElement
-            {
-                Key = "More Info",
-                Data = new DetailsSeparator(),
-            });
-
-            metadata.Add(new DetailsElement
-            {
-                Key = "Quick Links",
-                Data = new DetailsCommands
-                {
-                    Commands = playerCommands
-                }
-            });
-        }
-
         var details = new Details
         {
             Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
@@ -259,23 +244,23 @@ internal sealed partial class TeamRosterListPage : ListPage
         return details;
     }
 
-    private static ICommand[] CreatePlayerCommands(RosterAthlete athlete)
+    private static IContextItem[] CreatePlayerContextItems(RosterAthlete athlete)
     {
         if (athlete.Links == null || athlete.Links.Count == 0)
         {
-            return Array.Empty<ICommand>();
+            return Array.Empty<IContextItem>();
         }
 
-        var commands = new List<ICommand>();
+        var contextItems = new List<IContextItem>();
 
         // Define the links we want to show and their icons
         var linkConfigs = new[]
         {
             new { Rel = "stats", Name = "View Stats", Icon = "\uE9D9" }, // Chart icon
-            new { Rel = "gamelog", Name = "Game Log", Icon = "\uE81C" }, // Calendar icon
-            new { Rel = "news", Name = "News", Icon = "\uE789" }, // News icon
-            new { Rel = "bio", Name = "Biography", Icon = "\uE77B" }, // Contact icon
-            new { Rel = "splits", Name = "Splits", Icon = "\uE8BC" }, // Split view icon
+            new { Rel = "gamelog", Name = "View Game Log", Icon = "\uE81C" }, // Calendar icon
+            new { Rel = "news", Name = "View News", Icon = "\uE789" }, // News icon
+            new { Rel = "bio", Name = "View Biography", Icon = "\uE77B" }, // Contact icon
+            new { Rel = "splits", Name = "View Splits", Icon = "\uE8BC" }, // Split view icon
         };
 
         foreach (var config in linkConfigs)
@@ -285,16 +270,18 @@ internal sealed partial class TeamRosterListPage : ListPage
 
             if (link != null && !string.IsNullOrEmpty(link.Href))
             {
-                commands.Add(new OpenUrlCommand(link.Href)
+                contextItems.Add(new CommandContextItem(new OpenUrlCommand(link.Href)
                 {
                     Name = config.Name,
-                    Icon = new IconInfo(config.Icon),
                     Result = CommandResult.Dismiss()
+                })
+                {
+                    Icon = new IconInfo(config.Icon)
                 });
             }
         }
 
-        return commands.ToArray();
+        return contextItems.ToArray();
     }
 
     private string BuildPlayerBio(RosterAthlete athlete)
