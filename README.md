@@ -138,8 +138,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have suggestions:
 
-- 🐛 [Report a bug](https://github.com/joadoumie/NBACmdPalExtension/issues)
-- 💡 [Request a feature](https://github.com/joadoumie/NBACmdPalExtension/issues)
+- 🐛 [Report a bug](https://github.com/joadoumie/NBACmdPalExtension/issues/new?template=bug_report.yml)
+- 💡 [Request a feature](https://github.com/joadoumie/NBACmdPalExtension/issues/new?template=feature_request.yml)
 - ⭐ Star this repository if you find it useful!
 
 ---
