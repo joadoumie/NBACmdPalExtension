@@ -16,7 +16,7 @@ using NBAExtension.Helpers;
 
 namespace NBAExtension.Pages;
 
-internal sealed partial class TeamRosterListPage : ListPage
+internal sealed partial class TeamRosterListPage : DynamicListPage
 {
     private static readonly HttpClient _httpClient = new();
     private readonly string _teamId;
@@ -34,7 +34,15 @@ internal sealed partial class TeamRosterListPage : ListPage
         Title = $"{_teamName} Roster";
         Icon = new IconInfo(_teamLogo);
         ShowDetails = true; // Enable details view
+        
+        var filters = new InjuryStatusFilters();
+        filters.PropChanged += Filters_PropChanged;
+        Filters = filters;
     }
+
+    private void Filters_PropChanged(object sender, IPropChangedEventArgs args) => RaiseItemsChanged();
+
+    public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
     public override IListItem[] GetItems()
     {
@@ -51,9 +59,41 @@ internal sealed partial class TeamRosterListPage : ListPage
             return new[] { new ListItem(new NoOpCommand()) { Title = "No roster data available" } };
         }
 
+        var filteredRoster = _roster.AsEnumerable();
+
+        // Apply injury status filter
+        if (!string.IsNullOrEmpty(Filters.CurrentFilterId))
+        {
+            switch (Filters.CurrentFilterId)
+            {
+                case "active":
+                    filteredRoster = filteredRoster.Where(athlete => 
+                        athlete.Injuries == null || athlete.Injuries.Count == 0);
+                    break;
+                case "other":
+                    filteredRoster = filteredRoster.Where(athlete => 
+                        athlete.Injuries != null && athlete.Injuries.Count > 0);
+                    break;
+                case "all":
+                default:
+                    // No filtering
+                    break;
+            }
+        }
+
+        // Apply search text filter
+        if (!string.IsNullOrEmpty(SearchText))
+        {
+            filteredRoster = filteredRoster.Where(athlete =>
+                (athlete.DisplayName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (athlete.FullName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (athlete.Position?.DisplayName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (athlete.Jersey?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
         var items = new List<IListItem>();
 
-        foreach (var athlete in _roster)
+        foreach (var athlete in filteredRoster)
         {
             if (athlete == null)
             {
@@ -64,9 +104,9 @@ internal sealed partial class TeamRosterListPage : ListPage
             var descriptionParts = new List<string>();
 
             // Add position to description
-            if (!string.IsNullOrEmpty(athlete.Position?.Abbreviation))
+            if (!string.IsNullOrEmpty(athlete.Position?.DisplayName))
             {
-                descriptionParts.Add(athlete.Position.Abbreviation);
+                descriptionParts.Add(athlete.Position.DisplayName);
             }
 
             // Add jersey number to description
@@ -106,11 +146,16 @@ internal sealed partial class TeamRosterListPage : ListPage
                 Subtitle = descriptionParts.Count > 0 ? string.Join(" • ", descriptionParts) : string.Empty,
                 Icon = new IconInfo(athlete.Headshot?.Href ?? _teamLogo),
                 Tags = tags.Count > 0 ? tags.ToArray() : Array.Empty<Tag>(),
-                MoreCommands = moreCommands.Length > 0 ? moreCommands : null,
+                MoreCommands = moreCommands.Length > 0 ? moreCommands : Array.Empty<IContextItem>(),
                 Details = CreatePlayerDetails(athlete)
             };
 
             items.Add(listItem);
+        }
+
+        if (items.Count == 0)
+        {
+            return new[] { new ListItem(new NoOpCommand()) { Title = "No players match the current filter" } };
         }
 
         System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {items.Count} roster items");
@@ -322,6 +367,21 @@ internal sealed partial class TeamRosterListPage : ListPage
             System.Diagnostics.Debug.WriteLine($"Error loading roster: {ex.Message}");
             _roster = new List<RosterAthlete>();
         }
+    }
+}
+
+#pragma warning disable SA1402 // File may only contain a single type
+public partial class InjuryStatusFilters : Filters
+#pragma warning restore SA1402 // File may only contain a single type
+{
+    public override IFilterItem[] GetFilters()
+    {
+        return
+        [
+            new Filter() { Id = "all", Name = "All Players" },
+            new Filter() { Id = "active", Name = "Active", Icon = new IconInfo("\uE73E") }, // Checkmark icon
+            new Filter() { Id = "other", Name = "Injury Report", Icon = new IconInfo("\uE7BA") }, // Warning icon
+        ];
     }
 }
 
