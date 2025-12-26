@@ -11,7 +11,7 @@
 param(
     [string]$ExtensionName = "NBAExtension",  # Change to your extension name
     [string]$Configuration = "Release",
-    [string]$Version = "0.0.1",  # Change to your version
+    [string]$Version = "0.0.1.0",  # Change to your version
     [string[]]$Platforms = @("x64", "arm64")
 )
 

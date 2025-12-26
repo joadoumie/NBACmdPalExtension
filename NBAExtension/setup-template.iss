@@ -7,7 +7,7 @@
 ; 5. Replace CLSID-HERE with extensions CLSID
 ; 6. Update the default version to match your project file
 
-#define AppVersion "0.0.1"
+#define AppVersion "0.0.1.0"
 
 [Setup]
 AppId={{cdcbf0e4-72a6-4e91-bd54-d4fc7fc43ba8}}
