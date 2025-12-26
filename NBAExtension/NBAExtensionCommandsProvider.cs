@@ -24,12 +24,11 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
 
     public NBAExtensionCommandsProvider()
     {
-        DisplayName = "View Upcoming NBA Games";
+        DisplayName = "NBA Command Palette Extension";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
         _commands = [
-            new CommandItem(new ViewGamesDynamicPage()) { Title = DisplayName, Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"), MoreCommands = GetAboutContextItems() },
+            new CommandItem(new ViewGamesDynamicPage()) { Title = "View NBA Games", Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"), MoreCommands = GetAboutContextItems() },
             new CommandItem(new ViewStandingsDynamicPage()) { Title = "View NBA Standings", Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"), MoreCommands = GetAboutContextItems() },
-            new CommandItem(new SampleGalleryListPage()) { Title = "Sample Gallery List Page" },
         ];
     }
 
