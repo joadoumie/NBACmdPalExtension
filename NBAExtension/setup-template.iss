@@ -7,7 +7,7 @@
 ; 5. Replace CLSID-HERE with extensions CLSID
 ; 6. Update the default version to match your project file
 
-#define AppVersion "0.0.1.0"
+#define AppVersion "0.0.1.1"
 
 [Setup]
 AppId={{cdcbf0e4-72a6-4e91-bd54-d4fc7fc43ba8}}
@@ -31,5 +31,5 @@ Source: "bin\Release\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion 
 Name: "{group}\NBA Command Palette Extension"; Filename: "{app}\NBAExtension.exe"
 
 [Registry]
-Root: HKCU; Subkey: "SOFTWARE\Classes\CLSID\{{CLSID-HERE}}"; ValueData: "NBAExtension"
-Root: HKCU; Subkey: "SOFTWARE\Classes\CLSID\{{CLSID-HERE}}\LocalServer32"; ValueData: "{app}\NBAExtension.exe -RegisterProcessAsComServer"
+Root: HKCU; Subkey: "SOFTWARE\Classes\CLSID\{{cdcbf0e4-72a6-4e91-bd54-d4fc7fc43ba8}}"; ValueData: "NBAExtension"
+Root: HKCU; Subkey: "SOFTWARE\Classes\CLSID\{{cdcbf0e4-72a6-4e91-bd54-d4fc7fc43ba8}}\LocalServer32"; ValueData: "{app}\NBAExtension.exe -RegisterProcessAsComServer"
