@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+
+# Draft for 0.0.2.0. The extension is now distributed exclusively through the
+# Microsoft Store (see archive/inno-installer/README.md for why). Before
+# submitting this to microsoft/winget-pkgs:
+#
+#   1. Submit the .msixbundle produced by .github/workflows/release-msix.yml
+#      to Partner Center and wait for the listing to go live.
+#   2. Grab the Store product ID from the listing URL
+#      (apps.microsoft.com/detail/<ID>) — it starts with "9" and is ~12 chars.
+#   3. Replace MSSTORE_PRODUCT_ID_TODO below with that ID.
+#   4. Run `winget validate --manifest winget/0.0.2.0` locally to sanity-check.
+#   5. Open a PR against microsoft/winget-pkgs under
+#      manifests/j/joadoumie/NBACommandPaletteExtension/0.0.2.0/.
+
+PackageIdentifier: joadoumie.NBACommandPaletteExtension
+PackageVersion: 0.0.2.0
+InstallerLocale: en-US
+InstallerType: msstore
+Installers:
+- Architecture: x64
+  InstallerType: msstore
+  MSStoreProductIdentifier: MSSTORE_PRODUCT_ID_TODO
+- Architecture: arm64
+  InstallerType: msstore
+  MSStoreProductIdentifier: MSSTORE_PRODUCT_ID_TODO
+ManifestType: installer
+ManifestVersion: 1.10.0
