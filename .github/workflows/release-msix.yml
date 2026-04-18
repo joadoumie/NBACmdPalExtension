@@ -1,0 +1,133 @@
+name: Build MSIX for Store
+
+# Produces an unsigned .msixbundle (x64 + arm64) ready for upload to
+# Partner Center (partner.microsoft.com). The Store re-signs the package
+# with the Microsoft Store CA on its end — we never sign locally.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "4-part version (e.g. 0.0.2.0). Leave empty to use the version in Package.appxmanifest."
+        required: false
+        type: string
+
+env:
+  SOLUTION: NBAExtension.sln
+  PROJECT: NBAExtension/NBAExtension.csproj
+  MANIFEST: NBAExtension/Package.appxmanifest
+  PACKAGE_NAME: joadoumie.NBACommandPaletteExtension
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          if (-not $version) {
+            [xml]$m = Get-Content "${{ env.MANIFEST }}"
+            $version = $m.Package.Identity.Version
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+            throw "Version '$version' is not a 4-part version (W.X.Y.Z)"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Building version: $version"
+
+      - name: Patch manifest version
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $path = "${{ env.MANIFEST }}"
+          [xml]$m = Get-Content $path
+          if ($m.Package.Identity.Version -ne $version) {
+            Write-Host "Patching manifest version $($m.Package.Identity.Version) -> $version"
+            $m.Package.Identity.Version = $version
+            $m.Save((Resolve-Path $path).Path)
+          }
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION }}
+
+      - name: Build x64 MSIX
+        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
+
+      - name: Build ARM64 MSIX
+        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=ARM64 /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
+
+      - name: Locate makeappx
+        id: makeappx
+        shell: pwsh
+        run: |
+          $found = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" -ErrorAction SilentlyContinue |
+                   Sort-Object FullName -Descending |
+                   Select-Object -First 1
+          if (-not $found) { throw "makeappx.exe not found in Windows Kits" }
+          Write-Host "Using: $($found.FullName)"
+          "path=$($found.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Create .msixbundle
+        id: bundle
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $root = "${{ github.workspace }}"
+          $stage = Join-Path $root "BundleStage"
+          $out = Join-Path $root "AppPackages"
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+          $msixFiles = Get-ChildItem -Path $out -Recurse -Filter "*.msix" -File
+          if ($msixFiles.Count -lt 2) {
+            Write-Host "::warning::Expected at least 2 .msix files (x64 + arm64), found $($msixFiles.Count)"
+            $msixFiles | ForEach-Object { Write-Host "  $($_.FullName)" }
+          }
+          foreach ($f in $msixFiles) {
+            Copy-Item $f.FullName (Join-Path $stage $f.Name) -Force
+          }
+
+          $bundlePath = Join-Path $out "${{ env.PACKAGE_NAME }}_${version}.msixbundle"
+          & "${{ steps.makeappx.outputs.path }}" bundle /d "$stage" /p "$bundlePath" /bv "$version" /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx bundle failed: $LASTEXITCODE" }
+
+          Write-Host "Bundle: $bundlePath"
+          Get-Item $bundlePath | Format-List Name, Length, LastWriteTime
+          "bundle=$bundlePath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload .msix artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}-${{ steps.version.outputs.version }}-msix
+          path: |
+            AppPackages/**/*.msix
+            AppPackages/*.msixbundle
+          if-no-files-found: error
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "Built unsigned MSIX bundle for version ${{ steps.version.outputs.version }}."
+          Write-Host "Next steps:"
+          Write-Host "  1. Download the artifact from this workflow run."
+          Write-Host "  2. Go to Partner Center -> Apps -> NBA Command Palette Extension -> new submission."
+          Write-Host "  3. Upload the .msixbundle under 'Packages'."
+          Write-Host "  4. Fill in Store listing fields and submit for certification."
+          Write-Host "  5. Once certified, update winget/manifests with the Store product ID."
