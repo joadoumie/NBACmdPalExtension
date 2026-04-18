@@ -18,7 +18,7 @@
 
 NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, and player stats without leaving your workflow.
 
-> **⚠️ Work in Progress**: This extension is actively being developed. Next milestone: publish to WinGet!
+> **⚠️ Work in Progress**: This extension is actively being developed. Next milestone: ship 0.0.2.0 through the Microsoft Store so PowerToys actually finds it.
 
 ## ✨ Features
 
@@ -63,16 +63,36 @@ Browse complete team rosters with comprehensive player information:
 
 ## 🚀 Installation
 
-### Option 1: From Source (Current)
+> **Upgrading from 0.0.1.x?** Those builds shipped as an Inno `.exe` that
+> registered a COM server but wasn't discoverable by PowerToys Command
+> Palette. Uninstall them from *Settings → Apps → Installed apps*
+> (search "NBA Command Palette Extension") before installing 0.0.2.0.
 
-1. **Clone the repository**
-2. **Open in Visual Studio**: Open the solution file in Visual Studio 2022 or newer.
-3. **Deploy the extension**
-   - Open the project in Visual Studio 2022+
-   - Set the build configuration to **Debug** or **Release**
-   - Build and run (F5)
+### Option 1: Microsoft Store
 
-### Option 2: WinGet (Coming Soon)
+Install from the [Microsoft Store listing](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension)
+— this is the recommended path. The Store signs and delivers the MSIX, and
+PowerToys picks it up automatically via the Command Palette AppExtension
+contract.
+
+### Option 2: winget
+
+```powershell
+winget install joadoumie.NBACommandPaletteExtension
+```
+
+winget routes to the Store listing under the hood, so this is equivalent to
+Option 1.
+
+### Option 3: From source (for contributors)
+
+1. Clone the repository.
+2. Open `NBAExtension.sln` in Visual Studio 2022 (17.12+) with the Windows
+   App SDK workload.
+3. Set the active platform to **x64** (or **ARM64**) and **Release**, then
+   **Deploy** the `NBAExtension` project. Deploying registers the MSIX on
+   your machine so PowerToys can find it.
+4. Open PowerToys Command Palette and search for "NBA".
 
 ## 🎮 Usage
 
@@ -111,7 +131,7 @@ Browse complete team rosters with comprehensive player information:
 - [ ] User preferences for favorite teams
 - [ ] Player stats integration
 - [ ] Team standings
-- [ ] WinGet distribution
+- [x] WinGet distribution (0.0.1.x via Inno; 0.0.2.0+ via Microsoft Store)
 - [ ] Add releases to GitHub (no clue how to do this yet)
 - [ ] Auto-refresh for live games
 
