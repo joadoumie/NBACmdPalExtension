@@ -67,11 +67,15 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION }}
 
+      # The csproj references PublishProfiles\win-$(Platform).pubxml for VS,
+      # but those .pubxml files are gitignored and command-line MSBuild does
+      # not auto-load them. Pass the same knobs (SelfContained, RID, R2R) here
+      # so trim/ILLink sees a valid publish configuration (NETSDK1102).
       - name: Build x64 MSIX
-        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
+        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:SelfContained=true /p:PublishReadyToRun=true /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
 
       - name: Build ARM64 MSIX
-        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=ARM64 /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
+        run: msbuild ${{ env.PROJECT }} /restore /p:Configuration=Release /p:Platform=ARM64 /p:RuntimeIdentifier=win-arm64 /p:SelfContained=true /p:PublishReadyToRun=true /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxBundle=Never /p:AppxPackageDir="${{ github.workspace }}\AppPackages\"
 
       - name: Locate makeappx
         id: makeappx
