@@ -169,6 +169,7 @@ publish/
 
 # Publish Web Output
 *.[Pp]ublish.xml
+/.release-staging/
 *.azurePubxml
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
