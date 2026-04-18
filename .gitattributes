@@ -1,0 +1,16 @@
+# Prevent git / downstream tooling from corrupting binary assets. The
+# previous generation of .png files was damaged by UTF-8 transcoding —
+# every file started with EF BF BD (U+FFFD replacement char) instead of
+# the real 89 50 4E 47 PNG magic. Marking as binary is belt-and-braces.
+
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pfx    binary
+*.snk    binary
+*.msix   binary
+*.msixbundle binary
+*.appx   binary
+*.appxbundle binary
