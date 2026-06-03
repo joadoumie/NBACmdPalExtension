@@ -38,7 +38,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
-    public override IListItem[] GetItems()
+    public override IListSection[] GetSections()
     {
         IsLoading = true;
         var delta = DateTime.UtcNow - _lastFetch;
@@ -50,11 +50,11 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         }
 
         var searchText = SearchText ?? string.Empty;
-        var items = new List<IListItem>();
+        var sections = new List<IListSection>();
 
         // Determine which conferences to show based on filter
         var conferencesToShow = new List<string>();
-        
+
         if (string.IsNullOrEmpty(Filters.CurrentFilterId) || Filters.CurrentFilterId == "all")
         {
             conferencesToShow.Add("Eastern Conference");
@@ -69,7 +69,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
             conferencesToShow.Add("Western Conference");
         }
 
-        // Build items for each conference
+        // Build a section for each conference
         foreach (var conference in conferencesToShow)
         {
             if (!_standings.TryGetValue(conference, out var conferenceStandings))
@@ -77,26 +77,12 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                 continue;
             }
 
-            // Add conference header
-            var headerTag = new Tag(conference)
-            {
-                Background = ColorHelpers.FromArgb(255, 30, 30, 30),
-                Foreground = ColorHelpers.FromArgb(255, 255, 255, 255)
-            };
-
-            var headerItem = new ListItem(new NoOpCommand())
-            {
-                Title = conference,
-                Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"),
-                Tags = [headerTag]
-            };
-
-            items.Add(headerItem);
-
-            // Sort by seed (1st to 15th) and add teams
+            // Sort by seed (1st to 15th) and build items
             var sortedTeams = conferenceStandings
                 .OrderBy(t => t.Seed)
                 .ToList();
+
+            var sectionItems = new List<IListItem>();
 
             foreach (var (entry, seed) in sortedTeams)
             {
@@ -115,7 +101,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                     var listItem = StandingsListItemFactory.CreateListItem(entry, conference);
                     if (listItem != null)
                     {
-                        items.Add(listItem);
+                        sectionItems.Add(listItem);
                     }
                 }
                 catch (Exception ex)
@@ -123,16 +109,25 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                     System.Diagnostics.Debug.WriteLine($"Error processing standings entry: {ex.Message}");
                 }
             }
+
+            if (sectionItems.Count > 0 || string.IsNullOrWhiteSpace(searchText))
+            {
+                sections.Add(new ListSection()
+                {
+                    Title = conference,
+                    Items = sectionItems.ToArray(),
+                });
+            }
         }
 
         IsLoading = false;
-        
-        if (items.Count == 0)
+
+        if (sections.Count == 0)
         {
-            return [new ListItem(new NoOpCommand()) { Title = "No standings data found." }];
+            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No standings data found." }] }];
         }
 
-        return items.ToArray();
+        return sections.ToArray();
     }
 
     private async Task FetchStandingsAsync()
