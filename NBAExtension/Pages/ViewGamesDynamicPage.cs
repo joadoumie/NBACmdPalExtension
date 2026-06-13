@@ -22,8 +22,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 {
     private static readonly HttpClient _httpClient = new();
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private readonly List<ListItem> _lastGames = [];
-    private readonly Dictionary<ListItem, DateTime> _gameDates = [];
+    private readonly List<(ListItem Item, DateTime Date, string DateLabel)> _lastGames = [];
     private DateTime _lastFetch = DateTime.MinValue;
     private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1&render=false&device=desktop&userab=18";
 
@@ -64,44 +63,46 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
         }
 
         var searchText = SearchText ?? string.Empty;
-        
-        IListItem[] results;
-        
+
+        IEnumerable<(ListItem Item, DateTime Date, string DateLabel)> filtered;
+
         if (string.IsNullOrWhiteSpace(searchText))
         {
-            // No search text - just sort by date
-            results = _lastGames
-                .OrderBy(item => _gameDates.TryGetValue(item, out var date) ? date : DateTime.MaxValue)
-                .ToArray();
+            filtered = _lastGames.OrderBy(g => g.Date);
         }
         else
         {
-            // With search text - filter and sort by date (all matches equal)
-            results = _lastGames
-                .Select(item => new
-                {
-                    Item = item,
-                    MatchResult = FuzzyStringMatcher.ScoreFuzzy(searchText, item.Title),
-                    Date = _gameDates.TryGetValue(item, out var date) ? date : DateTime.MaxValue
-                })
-                .Where(x => x.MatchResult > 0) // Only show matches
-                .OrderBy(x => x.Date) // Sort by date first
-                .Select(x => x.Item)
-                .ToArray();
+            filtered = _lastGames
+                .Where(g => FuzzyStringMatcher.ScoreFuzzy(searchText, g.Item.Title) > 0)
+                .OrderBy(g => g.Date);
+        }
+
+        // Group games by their date label
+        var grouped = filtered
+            .GroupBy(g => g.DateLabel)
+            .OrderBy(g => g.Min(x => x.Date))
+            .ToList();
+
+        var items = new List<IListItem>();
+        foreach (var group in grouped)
+        {
+            // Section prepends a Separator header for the date, then that day's games.
+            items.AddRange(new Section(group.Key, group.Select(g => (IListItem)g.Item).ToArray()));
         }
 
         IsLoading = false;
-        if (results.Length == 0 && string.IsNullOrEmpty(searchText))
+
+        if (items.Count == 0 && string.IsNullOrEmpty(searchText))
         {
-            return [new ListItem(new NoOpCommand()) { Title = "No games found." },];
+            return [new ListItem(new NoOpCommand()) { Title = "No games found." }];
         }
-        return results;
+
+        return items.ToArray();
     }
 
     private async Task FetchGamesAsync()
     {
         _lastGames.Clear();
-        _gameDates.Clear(); // Clear the dates dictionary
         _lastFetch = DateTime.UtcNow;
 
         try
@@ -150,13 +151,16 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
                             var listItem = GameListItemFactory.CreateListItem(game);
                             if (listItem != null)
                             {
-                                _lastGames.Add(listItem);
-                                
-                                // Store the game date for sorting
-                                if (DateTime.TryParse(game.Date, out var gameDate))
+                                DateTime gameDate = DateTime.MaxValue;
+                                string dateLabel = dateKey;
+                                if (DateTime.TryParse(game.Date, out var parsedDate))
                                 {
-                                    _gameDates[listItem] = gameDate;
+                                    gameDate = parsedDate;
+                                    var (label, _) = GameListItemFactory.FormatGameDateTime(game.Date);
+                                    dateLabel = label;
                                 }
+
+                                _lastGames.Add((listItem, gameDate, dateLabel));
                             }
                         }
                     }

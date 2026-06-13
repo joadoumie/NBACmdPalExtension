@@ -36,12 +36,12 @@ internal sealed partial class TeamLeadersPage : ListPage
         if (competition?.Competitors == null)
         {
             System.Diagnostics.Debug.WriteLine("TeamLeadersPage: No competition or competitors found");
-            return new[] { new ListItem(new NoOpCommand()) { Title = "No team leaders data available" } };
+            return [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }];
         }
 
         System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Processing {competition.Competitors.Count} competitors");
 
-        // Process both teams
+        // Build a section for each team
         foreach (var competitor in competition.Competitors)
         {
             if (competitor.Team == null)
@@ -53,99 +53,86 @@ internal sealed partial class TeamLeadersPage : ListPage
             System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Processing team {competitor.Team.DisplayName}");
             System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Leaders count = {competitor.Leaders?.Count ?? 0}");
 
-            // Add team header regardless of whether we have leaders
-            var teamHeader = new ListItem(new NoOpCommand())
-            {
-                Title = $"{competitor.Team.DisplayName} Leaders",
-                Icon = new IconInfo(GameListItemFactory.GetTeamLogo(competitor.Team)),
-                Tags = new[] { new Tag("Team") }
-            };
-            items.Add(teamHeader);
+            var sectionItems = new List<IListItem>();
 
             if (competitor.Leaders == null || competitor.Leaders.Count == 0)
             {
                 System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: No leaders data for {competitor.Team.DisplayName}");
-                items.Add(new ListItem(new NoOpCommand()) 
-                { 
-                    Title = "No leader data available for this team" 
-                });
-                continue;
+                sectionItems.Add(new ListItem(new NoOpCommand()) { Title = "No leader data available for this team" });
             }
-
-            // Debug: Log all leader categories
-            foreach (var cat in competitor.Leaders)
+            else
             {
-                System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Found category {cat.Abbreviation} - {cat.DisplayName}");
-            }
-
-            // Add ALL leader categories (not just PTS, REB, AST)
-            foreach (var category in competitor.Leaders)
-            {
-                if (category.Leaders == null || category.Leaders.Count == 0)
+                // Debug: Log all leader categories
+                foreach (var cat in competitor.Leaders)
                 {
-                    System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Category {category.Abbreviation} has no leaders");
-                    continue;
+                    System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Found category {cat.Abbreviation} - {cat.DisplayName}");
                 }
 
-                var leader = category.Leaders.FirstOrDefault();
-                if (leader == null)
+                // Add ALL leader categories (not just PTS, REB, AST)
+                foreach (var category in competitor.Leaders)
                 {
-                    System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Category {category.Abbreviation} has null leader");
-                    continue;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Processing leader for {category.Abbreviation}");
-
-                var tags = new List<Tag>
-                {
-                    new Tag($"{category.Abbreviation}: {leader.DisplayValue ?? "N/A"}")
-                };
-
-                // Only add optional tags if they exist
-                if (leader.Athlete != null)
-                {
-                    if (!string.IsNullOrEmpty(leader.Athlete.Jersey))
+                    if (category.Leaders == null || category.Leaders.Count == 0)
                     {
-                        tags.Add(new Tag($"#{leader.Athlete.Jersey}"));
+                        System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Category {category.Abbreviation} has no leaders");
+                        continue;
                     }
 
-                    if (!string.IsNullOrEmpty(leader.Athlete.Position?.Abbreviation))
+                    var leader = category.Leaders.FirstOrDefault();
+                    if (leader == null)
                     {
-                        tags.Add(new Tag(leader.Athlete.Position.Abbreviation));
+                        System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Category {category.Abbreviation} has null leader");
+                        continue;
                     }
+
+                    System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Processing leader for {category.Abbreviation}");
+
+                    var tags = new List<Tag>
+                    {
+                        new Tag($"{category.Abbreviation}: {leader.DisplayValue ?? "N/A"}")
+                    };
+
+                    if (leader.Athlete != null)
+                    {
+                        if (!string.IsNullOrEmpty(leader.Athlete.Jersey))
+                        {
+                            tags.Add(new Tag($"#{leader.Athlete.Jersey}"));
+                        }
+
+                        if (!string.IsNullOrEmpty(leader.Athlete.Position?.Abbreviation))
+                        {
+                            tags.Add(new Tag(leader.Athlete.Position.Abbreviation));
+                        }
+                    }
+
+                    var athleteName = leader.Athlete?.DisplayName ?? "Unknown Player";
+                    var athleteId = leader.Athlete?.Id ?? "0";
+                    var headshot = leader.Athlete?.Headshot;
+
+                    var athleteUrl = leader.Athlete?.Links?
+                        .FirstOrDefault(link => link.Rel?.Contains("playercard") == true)?.Href
+                        ?? $"https://www.espn.com/nba/player/_/id/{athleteId}";
+
+                    var command = new OpenUrlCommand(athleteUrl) { Name = "View Player on ESPN" };
+
+                    var listItem = new ListItem(command)
+                    {
+                        Title = $"{category.DisplayName ?? category.Abbreviation}: {athleteName}",
+                        Icon = new IconInfo(headshot ?? GameListItemFactory.GetTeamLogo(competitor.Team)),
+                        Tags = tags.ToArray()
+                    };
+
+                    sectionItems.Add(listItem);
                 }
-
-                var athleteName = leader.Athlete?.DisplayName ?? "Unknown Player";
-                var athleteId = leader.Athlete?.Id ?? "0";
-                var headshot = leader.Athlete?.Headshot;
-
-                var athleteUrl = leader.Athlete?.Links?
-                    .FirstOrDefault(link => link.Rel?.Contains("playercard") == true)?.Href 
-                    ?? $"https://www.espn.com/nba/player/_/id/{athleteId}";
-
-                var command = new OpenUrlCommand(athleteUrl) { Name = "View Player on ESPN" };
-                
-                var listItem = new ListItem(command)
-                {
-                    Title = $"{category.DisplayName ?? category.Abbreviation}: {athleteName}",
-                    Icon = new IconInfo(headshot ?? GameListItemFactory.GetTeamLogo(competitor.Team)),
-                    Tags = tags.ToArray()
-                };
-
-                items.Add(listItem);
             }
 
-            // Add spacer between teams
-            if (competitor != competition.Competitors.Last())
-            {
-                items.Add(new ListItem(new NoOpCommand()) { Title = " " });
-            }
+            // Section prepends a Separator header for the team, then its leader rows.
+            items.AddRange(new Section($"{competitor.Team.DisplayName} Leaders", sectionItems.ToArray()));
         }
 
         System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Returning {items.Count} items");
 
-        return items.Count > 0 
-            ? items.ToArray() 
-            : new[] { new ListItem(new NoOpCommand()) { Title = "No team leaders data available" } };
+        return items.Count > 0
+            ? items.ToArray()
+            : [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }];
     }
 }

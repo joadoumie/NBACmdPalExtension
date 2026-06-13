@@ -56,7 +56,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
 
         if (_roster == null || _roster.Count == 0)
         {
-            return new[] { new ListItem(new NoOpCommand()) { Title = "No roster data available" } };
+            return [new ListItem(new NoOpCommand()) { Title = "No roster data available" }];
         }
 
         var filteredRoster = _roster.AsEnumerable();
@@ -67,11 +67,11 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
             switch (Filters.CurrentFilterId)
             {
                 case "active":
-                    filteredRoster = filteredRoster.Where(athlete => 
+                    filteredRoster = filteredRoster.Where(athlete =>
                         athlete.Injuries == null || athlete.Injuries.Count == 0);
                     break;
                 case "other":
-                    filteredRoster = filteredRoster.Where(athlete => 
+                    filteredRoster = filteredRoster.Where(athlete =>
                         athlete.Injuries != null && athlete.Injuries.Count > 0);
                     break;
                 case "all":
@@ -91,7 +91,9 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
                 (athlete.Jersey?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
-        var items = new List<IListItem>();
+        // Separate into active and injured players
+        var activeItems = new List<IListItem>();
+        var injuredItems = new List<IListItem>();
 
         foreach (var athlete in filteredRoster)
         {
@@ -103,22 +105,21 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
             var tags = new List<Tag>();
             var descriptionParts = new List<string>();
 
-            // Add position to description
             if (!string.IsNullOrEmpty(athlete.Position?.DisplayName))
             {
                 descriptionParts.Add(athlete.Position.DisplayName);
             }
 
-            // Add jersey number to description
             if (!string.IsNullOrEmpty(athlete.Jersey))
             {
                 descriptionParts.Add($"#{athlete.Jersey}");
             }
 
-            // Add injury status tag if injured
-            if (athlete.Injuries != null && athlete.Injuries.Count > 0)
+            var isInjured = athlete.Injuries != null && athlete.Injuries.Count > 0;
+
+            if (isInjured)
             {
-                var injury = athlete.Injuries.FirstOrDefault();
+                var injury = athlete.Injuries!.FirstOrDefault();
                 if (injury != null && !string.IsNullOrEmpty(injury.Status))
                 {
                     var injuryTag = new Tag(injury.Status)
@@ -130,14 +131,11 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
                 }
             }
 
-            // Get player card URL
             var playerUrl = athlete.Links?
                 .FirstOrDefault(link => link.Rel?.Contains("playercard") == true)?.Href
                 ?? $"https://www.espn.com/nba/player/_/id/{athlete.Id}";
 
             var command = new OpenUrlCommand(playerUrl) { Name = "View Player on ESPN" };
-
-            // Create context items for more commands
             var moreCommands = CreatePlayerContextItems(athlete);
 
             var listItem = new ListItem(command)
@@ -150,15 +148,36 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
                 Details = CreatePlayerDetails(athlete)
             };
 
-            items.Add(listItem);
+            if (isInjured)
+            {
+                injuredItems.Add(listItem);
+            }
+            else
+            {
+                activeItems.Add(listItem);
+            }
+        }
+
+        var items = new List<IListItem>();
+
+        if (activeItems.Count > 0)
+        {
+            // Section prepends a Separator "Active" header, then the active players.
+            items.AddRange(new Section("Active", activeItems.ToArray()));
+        }
+
+        if (injuredItems.Count > 0)
+        {
+            // Section prepends a Separator "Injury Report" header, then the injured players.
+            items.AddRange(new Section("Injury Report", injuredItems.ToArray()));
         }
 
         if (items.Count == 0)
         {
-            return new[] { new ListItem(new NoOpCommand()) { Title = "No players match the current filter" } };
+            return [new ListItem(new NoOpCommand()) { Title = "No players match the current filter" }];
         }
 
-        System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {items.Count} roster items");
+        System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {items.Count} items");
         return items.ToArray();
     }
 
