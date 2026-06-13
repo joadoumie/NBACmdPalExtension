@@ -44,7 +44,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
-    public override IListSection[] GetSections()
+    public override IListItem[] GetItems()
     {
         if (!_isLoaded)
         {
@@ -56,7 +56,7 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
 
         if (_roster == null || _roster.Count == 0)
         {
-            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No roster data available" }] }];
+            return [new ListItem(new NoOpCommand()) { Title = "No roster data available" }];
         }
 
         var filteredRoster = _roster.AsEnumerable();
@@ -158,33 +158,27 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
             }
         }
 
-        var sections = new List<IListSection>();
+        var items = new List<IListItem>();
 
         if (activeItems.Count > 0)
         {
-            sections.Add(new ListSection()
-            {
-                Title = "Active",
-                Items = activeItems.ToArray(),
-            });
+            // Section prepends a Separator "Active" header, then the active players.
+            items.AddRange(new Section("Active", activeItems.ToArray()));
         }
 
         if (injuredItems.Count > 0)
         {
-            sections.Add(new ListSection()
-            {
-                Title = "Injury Report",
-                Items = injuredItems.ToArray(),
-            });
+            // Section prepends a Separator "Injury Report" header, then the injured players.
+            items.AddRange(new Section("Injury Report", injuredItems.ToArray()));
         }
 
-        if (sections.Count == 0)
+        if (items.Count == 0)
         {
-            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No players match the current filter" }] }];
+            return [new ListItem(new NoOpCommand()) { Title = "No players match the current filter" }];
         }
 
-        System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {sections.Count} sections");
-        return sections.ToArray();
+        System.Diagnostics.Debug.WriteLine($"TeamRosterListPage: Returning {items.Count} items");
+        return items.ToArray();
     }
 
     private Details CreatePlayerDetails(RosterAthlete athlete)

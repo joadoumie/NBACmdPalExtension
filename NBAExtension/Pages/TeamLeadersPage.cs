@@ -28,15 +28,15 @@ internal sealed partial class TeamLeadersPage : ListPage
         Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true");
     }
 
-    public override IListSection[] GetSections()
+    public override IListItem[] GetItems()
     {
-        var sections = new List<IListSection>();
+        var items = new List<IListItem>();
         var competition = _game.Competitions?.FirstOrDefault();
 
         if (competition?.Competitors == null)
         {
             System.Diagnostics.Debug.WriteLine("TeamLeadersPage: No competition or competitors found");
-            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }] }];
+            return [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }];
         }
 
         System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Processing {competition.Competitors.Count} competitors");
@@ -125,17 +125,14 @@ internal sealed partial class TeamLeadersPage : ListPage
                 }
             }
 
-            sections.Add(new ListSection()
-            {
-                Title = $"{competitor.Team.DisplayName} Leaders",
-                Items = sectionItems.ToArray(),
-            });
+            // Section prepends a Separator header for the team, then its leader rows.
+            items.AddRange(new Section($"{competitor.Team.DisplayName} Leaders", sectionItems.ToArray()));
         }
 
-        System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Returning {sections.Count} sections");
+        System.Diagnostics.Debug.WriteLine($"TeamLeadersPage: Returning {items.Count} items");
 
-        return sections.Count > 0
-            ? sections.ToArray()
-            : [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }] }];
+        return items.Count > 0
+            ? items.ToArray()
+            : [new ListItem(new NoOpCommand()) { Title = "No team leaders data available" }];
     }
 }

@@ -51,7 +51,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
-    public override IListSection[] GetSections()
+    public override IListItem[] GetItems()
     {
         IsLoading = true;
         var delta = DateTime.UtcNow - _lastFetch;
@@ -83,24 +83,21 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
             .OrderBy(g => g.Min(x => x.Date))
             .ToList();
 
-        var sections = new List<IListSection>();
+        var items = new List<IListItem>();
         foreach (var group in grouped)
         {
-            sections.Add(new ListSection()
-            {
-                Title = group.Key,
-                Items = group.Select(g => (IListItem)g.Item).ToArray(),
-            });
+            // Section prepends a Separator header for the date, then that day's games.
+            items.AddRange(new Section(group.Key, group.Select(g => (IListItem)g.Item).ToArray()));
         }
 
         IsLoading = false;
 
-        if (sections.Count == 0 && string.IsNullOrEmpty(searchText))
+        if (items.Count == 0 && string.IsNullOrEmpty(searchText))
         {
-            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No games found." }] }];
+            return [new ListItem(new NoOpCommand()) { Title = "No games found." }];
         }
 
-        return sections.ToArray();
+        return items.ToArray();
     }
 
     private async Task FetchGamesAsync()

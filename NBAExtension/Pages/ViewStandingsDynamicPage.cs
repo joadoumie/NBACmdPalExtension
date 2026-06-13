@@ -38,7 +38,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
-    public override IListSection[] GetSections()
+    public override IListItem[] GetItems()
     {
         IsLoading = true;
         var delta = DateTime.UtcNow - _lastFetch;
@@ -50,7 +50,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         }
 
         var searchText = SearchText ?? string.Empty;
-        var sections = new List<IListSection>();
+        var items = new List<IListItem>();
 
         // Determine which conferences to show based on filter
         var conferencesToShow = new List<string>();
@@ -110,24 +110,21 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                 }
             }
 
-            if (sectionItems.Count > 0 || string.IsNullOrWhiteSpace(searchText))
+            if (sectionItems.Count > 0)
             {
-                sections.Add(new ListSection()
-                {
-                    Title = conference,
-                    Items = sectionItems.ToArray(),
-                });
+                // Section prepends a Separator header for the conference, then the team rows.
+                items.AddRange(new Section(conference, sectionItems.ToArray()));
             }
         }
 
         IsLoading = false;
 
-        if (sections.Count == 0)
+        if (items.Count == 0)
         {
-            return [new ListSection() { Title = string.Empty, Items = [new ListItem(new NoOpCommand()) { Title = "No standings data found." }] }];
+            return [new ListItem(new NoOpCommand()) { Title = "No standings data found." }];
         }
 
-        return sections.ToArray();
+        return items.ToArray();
     }
 
     private async Task FetchStandingsAsync()
