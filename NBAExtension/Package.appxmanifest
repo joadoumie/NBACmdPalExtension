@@ -11,7 +11,7 @@
   <Identity
     Name="joadoumie.NBACommandPaletteExtension"
     Publisher="CN=2B17359D-8771-44C7-AF07-42CE3B87B52C"
-    Version="0.0.2.0" />
+    Version="0.0.3.0" />
 
   <Properties>
     <DisplayName>NBA Command Palette Extension</DisplayName>
