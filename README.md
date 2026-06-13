@@ -16,9 +16,9 @@
 
 ## 📋 Overview
 
-NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, and player stats without leaving your workflow.
+NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, standings, and player stats without leaving your workflow.
 
-> **⚠️ Work in Progress**: This extension is actively being developed. Next milestone: ship 0.0.2.0 through the Microsoft Store so PowerToys actually finds it.
+> **⚠️ Work in Progress**: This extension is actively being developed and is available on the [Microsoft Store](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension). Every list now groups its results into labeled sections. Next up: favorite-team preferences and auto-refresh for live games.
 
 ## ✨ Features
 
@@ -60,6 +60,17 @@ Browse complete team rosters with comprehensive player information:
 
 <img width="1889" height="968" alt="image" src="https://github.com/user-attachments/assets/d80a1605-04fe-4651-b8db-051e4ba0af03" />
 
+### 📈 League Standings
+
+Check the playoff picture at a glance:
+
+- **Eastern and Western Conference** shown as separate sections
+- **Seeded 1–15** with each team's win/loss record
+- **Filter** by conference
+- **Team logos** and direct links to ESPN
+
+> **New in 0.0.3.0:** every list page (Games, Standings, Team Leaders, Rosters) now groups its results into labeled sections with headers instead of one flat list.
+
 
 ## 🚀 Installation
 
@@ -87,8 +98,13 @@ Option 1.
 ### Option 3: From source (for contributors)
 
 1. Clone the repository.
-2. Open `NBAExtension.sln` in Visual Studio 2022 (17.12+) with the Windows
-   App SDK workload.
+2. Open `NBAExtension.sln` in Visual Studio 2022 (17.12+) or later. Install
+   these via the Visual Studio Installer first:
+   - **Windows application development** workload (Windows App SDK + WinUI +
+     the single-project MSIX deploy tooling)
+   - **Desktop development with C++** workload — or at minimum the **MSVC
+     v14x C++ x64/x86 build tools** (the CsWinRT AOT step shells out to MSVC)
+   - **Windows 11 SDK 10.0.26100** (matches the project's target platform)
 3. Set the active platform to **x64** (or **ARM64**) and **Release**, then
    **Deploy** the `NBAExtension` project. Deploying registers the MSIX on
    your machine so PowerToys can find it.
@@ -128,11 +144,12 @@ Option 1.
 - [x] View game leaders (in-progress/completed games)
 - [x] Team roster viewing with detailed player info
 - [x] Player injury status tracking
+- [x] Team standings (Eastern/Western, sectioned)
+- [x] Sectioned list pages with headers
+- [x] Add releases to GitHub
 - [ ] User preferences for favorite teams
 - [ ] Player stats integration
-- [ ] Team standings
 - [x] WinGet distribution (0.0.1.x via Inno; 0.0.2.0+ via Microsoft Store)
-- [ ] Add releases to GitHub (no clue how to do this yet)
 - [ ] Auto-refresh for live games
 
 ## 🤝 Contributing
