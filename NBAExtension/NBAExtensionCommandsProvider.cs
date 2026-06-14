@@ -27,7 +27,11 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
         DisplayName = "NBA Command Palette Extension";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
         _commands = [
-            new CommandItem(new ViewGamesDynamicPage()) { Title = "View NBA Games", Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"), MoreCommands = GetAboutContextItems() },
+            // Offseason takeover: the Knicks won the 2026 title and there are no upcoming
+            // games, so this entry opens the celebration page instead of an empty schedule.
+            // To restore the live schedule when the NBA returns, swap `new KnicksChampionsPage()`
+            // back to `new ViewGamesDynamicPage()` (the schedule page is kept intact below).
+            new CommandItem(new KnicksChampionsPage()) { Title = "🏆 New York Knicks — 2026 NBA Champions", Subtitle = "NBA games & schedule return next season — tap to celebrate", Icon = new IconInfo("https://a.espncdn.com/i/teamlogos/nba/500/ny.png"), MoreCommands = GetAboutContextItems() },
             new CommandItem(new ViewStandingsDynamicPage()) { Title = "View NBA Standings", Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"), MoreCommands = GetAboutContextItems() },
         ];
     }

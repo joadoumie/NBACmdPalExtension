@@ -52,6 +52,35 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         var searchText = SearchText ?? string.Empty;
         var items = new List<IListItem>();
 
+        // 🏆 Crown the 2026 champions at the very top (skipped while searching to keep results
+        // clean). Tapping the banner opens the full celebration page.
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            // The Knicks' ESPN team id (18) lets the banner reuse the shared roster page.
+            const string knicksLogo = "https://a.espncdn.com/i/teamlogos/nba/500/ny.png";
+            var championBanner = new ListItem(new KnicksChampionsPage())
+            {
+                Title = "New York Knicks",
+                Subtitle = "First NBA title since 1973 · Jalen Brunson, Finals MVP",
+                Icon = new IconInfo(knicksLogo),
+                Tags = [new Tag("Champions")
+                {
+                    Background = ColorHelpers.FromArgb(255, 255, 215, 0), // Gold
+                    Foreground = ColorHelpers.FromArgb(255, 20, 20, 20),  // Near-black
+                }],
+                MoreCommands =
+                [
+                    new CommandContextItem(new TeamRosterListPage("18", "New York Knicks", knicksLogo)
+                    {
+                        Name = "View Knicks Roster",
+                        Icon = new IconInfo(knicksLogo),
+                    }),
+                ],
+            };
+
+            items.AddRange(new Section("🏆 2026 NBA Champions", [championBanner]));
+        }
+
         // Determine which conferences to show based on filter
         var conferencesToShow = new List<string>();
 
@@ -88,7 +117,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
             {
                 try
                 {
-                    // Apply search filter
+                    // Apply fuzzy search filter on the team name.
                     if (!string.IsNullOrWhiteSpace(searchText))
                     {
                         var teamName = entry.Team?.DisplayName ?? string.Empty;
@@ -98,7 +127,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                         }
                     }
 
-                    var listItem = StandingsListItemFactory.CreateListItem(entry, conference);
+                    var listItem = StandingsListItemFactory.CreateListItem(entry, conference, IsChampionTeam(entry.Team));
                     if (listItem != null)
                     {
                         sectionItems.Add(listItem);
@@ -185,6 +214,18 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         {
             System.Diagnostics.Debug.WriteLine($"Error fetching NBA standings: {ex.Message}");
         }
+    }
+
+    private static bool IsChampionTeam(StandingsTeam? team)
+    {
+        if (team == null)
+        {
+            return false;
+        }
+
+        return string.Equals(team.Abbreviation, "NY", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(team.Abbreviation, "NYK", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(team.DisplayName, "New York Knicks", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()

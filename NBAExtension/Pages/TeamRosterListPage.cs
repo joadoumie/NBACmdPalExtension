@@ -81,14 +81,14 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
             }
         }
 
-        // Apply search text filter
-        if (!string.IsNullOrEmpty(SearchText))
+        // Apply fuzzy search across name, position, and jersey (consistent with the other pages).
+        if (!string.IsNullOrWhiteSpace(SearchText))
         {
             filteredRoster = filteredRoster.Where(athlete =>
-                (athlete.DisplayName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (athlete.FullName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (athlete.Position?.DisplayName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (athlete.Jersey?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+                FuzzyStringMatcher.ScoreFuzzy(SearchText, athlete.DisplayName ?? string.Empty) > 0 ||
+                FuzzyStringMatcher.ScoreFuzzy(SearchText, athlete.FullName ?? string.Empty) > 0 ||
+                FuzzyStringMatcher.ScoreFuzzy(SearchText, athlete.Position?.DisplayName ?? string.Empty) > 0 ||
+                FuzzyStringMatcher.ScoreFuzzy(SearchText, athlete.Jersey ?? string.Empty) > 0);
         }
 
         // Separate into active and injured players
