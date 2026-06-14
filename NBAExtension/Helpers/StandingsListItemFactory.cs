@@ -22,7 +22,7 @@ internal static class StandingsListItemFactory
     /// <param name="entry">The standings entry.</param>
     /// <param name="conference">The conference name.</param>
     /// <returns>A ListItem configured for the standings entry, or null if the data is invalid.</returns>
-    public static ListItem? CreateListItem(StandingsEntry entry, string conference)
+    public static ListItem? CreateListItem(StandingsEntry entry, string conference, bool isChampion = false)
     {
         if (entry.Team == null || entry.Stats == null || entry.Stats.Count == 0)
         {
@@ -64,10 +64,20 @@ internal static class StandingsListItemFactory
             subtitleParts.Add($"Conf: {confRecord}");
         }
 
-        var subtitle = string.Join(" ï ", subtitleParts);
+        var subtitle = string.Join(" ÔøΩ ", subtitleParts);
 
         // Build tags
         var tags = new List<Tag>();
+
+        // Crown the reigning champion so the title-holder's row leads with a gold badge.
+        if (isChampion)
+        {
+            tags.Add(new Tag("üèÜ Champions")
+            {
+                Background = ColorHelpers.FromArgb(255, 255, 215, 0), // Gold
+                Foreground = ColorHelpers.FromArgb(255, 20, 20, 20),  // Near-black
+            });
+        }
 
         // Record tag
         if (!string.IsNullOrEmpty(overallRecord))
