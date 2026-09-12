@@ -18,7 +18,7 @@
 
 NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, standings, and player stats without leaving your workflow.
 
-> **⚠️ Work in Progress**: This extension is actively being developed and is available on the [Microsoft Store](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension). Every list now groups its results into labeled sections. Next up: favorite-team preferences and auto-refresh for live games.
+> **⚠️ Work in Progress**: This extension is actively being developed and is available on the [Microsoft Store](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension). Standings now open team rosters with Enter, and icons no longer depend on network access. Next up: favorite-team preferences and auto-refresh for live games.
 
 ## ✨ Features
 
@@ -56,7 +56,7 @@ Browse complete team rosters with comprehensive player information:
 - **Player attributes**: position, jersey number, height, weight, age, experience
 - **Quick links** to player stats, game logs, news, biography, and splits on ESPN
 - **Player headshots** and visual presentation
-- **Direct access** from any game listing to view either team's roster
+- **Direct access** from any game listing to view either team's roster, or press Enter on a team in the standings
 
 <img width="1889" height="968" alt="image" src="https://github.com/user-attachments/assets/d80a1605-04fe-4651-b8db-051e4ba0af03" />
 
@@ -67,9 +67,18 @@ Check the playoff picture at a glance:
 - **Eastern and Western Conference** shown as separate sections
 - **Seeded 1–15** with each team's win/loss record
 - **Filter** by conference
-- **Team logos** and direct links to ESPN
+- **Enter** opens the team's roster; **Ctrl+Enter** opens the team on ESPN
+- **Reigning champion** tagged with a gold 🏆 badge
+- **Team logos** on every row
 
-> **New in 0.0.3.0:** every list page (Games, Standings, Team Leaders, Rosters) now groups its results into labeled sections with headers instead of one flat list.
+> **New in 0.0.5.0:**
+> - Standings rows now open the team's **roster on Enter**; the ESPN team page moves to **Ctrl+Enter**.
+> - **Rosters load again.** ESPN began rejecting the endpoint the extension used, which showed as "No roster data available"; rosters now come from the same host as standings.
+> - **Icons work offline.** The league logo ships inside the package, so the top-level commands and page headers no longer depend on ESPN's CDN.
+> - The 2026 championship celebration is retired. The reigning champion keeps a gold **🏆 2026 Champions** tag in the standings.
+> - Preseason polish: the rank is hidden until ESPN reports real seeds, and the standings subtitle separator renders correctly again.
+>
+> **0.0.3.0:** every list page (Games, Standings, Team Leaders, Rosters) groups its results into labeled sections with headers instead of one flat list.
 
 
 ## 🚀 Installation
@@ -118,6 +127,7 @@ Option 1.
 4. Use **fuzzy search** to filter by team name (e.g., type "lakers" or "LAL")
 5. Click any game to **view full details on ESPN**
 6. Right-click or use context menu to **view team rosters** or **statistical leaders**
+7. In **View NBA Standings**, press Enter on a team to open its roster, or Ctrl+Enter for the team's ESPN page
 
 ### Search Tips
 
