@@ -390,7 +390,9 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
     {
         try
         {
-            var url = $"http://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{_teamId}/roster";
+            // site.web.api.espn.com serves the same payload as site.api.espn.com, which now
+            // answers 403 to requests without a browser User-Agent (like this HttpClient).
+            var url = $"https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{_teamId}/roster";
             System.Diagnostics.Debug.WriteLine($"Fetching roster from: {url}");
 
             var jsonString = await _httpClient.GetStringAsync(url);
