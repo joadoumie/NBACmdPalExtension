@@ -136,10 +136,12 @@ internal static class StandingsListItemFactory
             Result = CommandResult.Dismiss()
         };
 
-        // Create more commands list
+        // The roster page is the primary command (Enter) and ESPN is the first context item
+        // (Ctrl+Enter). Fall back to ESPN as primary when the feed gives no team id to build
+        // a roster page from.
+        ICommand primaryCommand = viewTeamCommand;
         var moreCommands = new List<IContextItem>();
 
-        // Add roster command if team ID is available
         if (team.Id != null && !string.IsNullOrEmpty(team.DisplayName))
         {
             var rosterPage = new TeamRosterListPage(
@@ -150,10 +152,11 @@ internal static class StandingsListItemFactory
                 Name = $"View {team.ShortDisplayName ?? team.DisplayName} Roster",
                 Icon = new IconInfo(teamLogoUrl)
             };
-            moreCommands.Add(new CommandContextItem(rosterPage));
+            primaryCommand = rosterPage;
+            moreCommands.Add(new CommandContextItem(viewTeamCommand));
         }
 
-        var listItem = new ListItem(viewTeamCommand)
+        var listItem = new ListItem(primaryCommand)
         {
             Title = title,
             Subtitle = subtitle,
