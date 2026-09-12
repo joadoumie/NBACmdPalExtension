@@ -48,10 +48,14 @@ internal static class StandingsListItemFactory
         // Build title with just team name
         var title = team.DisplayName ?? "Unknown Team";
 
-        // Build subtitle with ranking and records
-        var rank = GetOrdinalSuffix(playoffSeed);
-        var subtitleParts = new List<string> { rank };
-        
+        // Build subtitle with ranking and records. ESPN reports the seed as 0 until the
+        // season starts, so only show the rank ("1st", "2nd", ...) once a real seed exists.
+        var subtitleParts = new List<string>();
+        if (int.TryParse(playoffSeed, out var seed) && seed > 0)
+        {
+            subtitleParts.Add(GetOrdinalSuffix(playoffSeed));
+        }
+
         if (!string.IsNullOrEmpty(homeRecord))
         {
             subtitleParts.Add($"Home: {homeRecord}");
