@@ -25,7 +25,7 @@ internal sealed partial class TeamLeadersPage : ListPage
         var awayTeam = competition?.Competitors?.FirstOrDefault(c => c.HomeAway?.Equals("away", StringComparison.OrdinalIgnoreCase) == true);
 
         Title = $"Team Leaders: {awayTeam?.Team?.ShortDisplayName ?? "Away"} vs. {homeTeam?.Team?.ShortDisplayName ?? "Home"}";
-        Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true");
+        Icon = NbaIcons.LeagueLogo;
     }
 
     public override IListItem[] GetItems()
