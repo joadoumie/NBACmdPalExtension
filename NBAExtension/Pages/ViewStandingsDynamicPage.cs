@@ -25,7 +25,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
 
     public ViewStandingsDynamicPage()
     {
-        Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true");
+        Icon = NbaIcons.LeagueLogo;
         Title = "View NBA Standings";
         Name = "View NBA Standings";
 
@@ -51,35 +51,6 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
 
         var searchText = SearchText ?? string.Empty;
         var items = new List<IListItem>();
-
-        // 🏆 Crown the 2026 champions at the very top (skipped while searching to keep results
-        // clean). Tapping the banner opens the full celebration page.
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            // The Knicks' ESPN team id (18) lets the banner reuse the shared roster page.
-            const string knicksLogo = "https://a.espncdn.com/i/teamlogos/nba/500/ny.png";
-            var championBanner = new ListItem(new KnicksChampionsPage())
-            {
-                Title = "New York Knicks",
-                Subtitle = "First NBA title since 1973 · Jalen Brunson, Finals MVP",
-                Icon = new IconInfo(knicksLogo),
-                Tags = [new Tag("Champions")
-                {
-                    Background = ColorHelpers.FromArgb(255, 255, 215, 0), // Gold
-                    Foreground = ColorHelpers.FromArgb(255, 20, 20, 20),  // Near-black
-                }],
-                MoreCommands =
-                [
-                    new CommandContextItem(new TeamRosterListPage("18", "New York Knicks", knicksLogo)
-                    {
-                        Name = "View Knicks Roster",
-                        Icon = new IconInfo(knicksLogo),
-                    }),
-                ],
-            };
-
-            items.AddRange(new Section("🏆 2026 NBA Champions", [championBanner]));
-        }
 
         // Determine which conferences to show based on filter
         var conferencesToShow = new List<string>();
@@ -216,6 +187,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         }
     }
 
+    // Reigning NBA champion for the 2026-27 season (Knicks, 2026 title). Update when the 2027 title is decided.
     private static bool IsChampionTeam(StandingsTeam? team)
     {
         if (team == null)

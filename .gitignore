@@ -169,8 +169,10 @@ publish/
 
 # Publish Web Output
 *.[Pp]ublish.xml
-/.release-staging/
 *.azurePubxml
+
+# Local staging for Store release artifacts (.msixbundle + release notes); never committed
+/release-staging/
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml

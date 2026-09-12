@@ -21,6 +21,7 @@ internal static class StandingsListItemFactory
     /// </summary>
     /// <param name="entry">The standings entry.</param>
     /// <param name="conference">The conference name.</param>
+    /// <param name="isChampion">Whether the team is the reigning NBA champion; adds a gold tag.</param>
     /// <returns>A ListItem configured for the standings entry, or null if the data is invalid.</returns>
     public static ListItem? CreateListItem(StandingsEntry entry, string conference, bool isChampion = false)
     {
@@ -47,10 +48,14 @@ internal static class StandingsListItemFactory
         // Build title with just team name
         var title = team.DisplayName ?? "Unknown Team";
 
-        // Build subtitle with ranking and records
-        var rank = GetOrdinalSuffix(playoffSeed);
-        var subtitleParts = new List<string> { rank };
-        
+        // Build subtitle with ranking and records. ESPN reports the seed as 0 until the
+        // season starts, so only show the rank ("1st", "2nd", ...) once a real seed exists.
+        var subtitleParts = new List<string>();
+        if (int.TryParse(playoffSeed, out var seed) && seed > 0)
+        {
+            subtitleParts.Add(GetOrdinalSuffix(playoffSeed));
+        }
+
         if (!string.IsNullOrEmpty(homeRecord))
         {
             subtitleParts.Add($"Home: {homeRecord}");
@@ -64,7 +69,7 @@ internal static class StandingsListItemFactory
             subtitleParts.Add($"Conf: {confRecord}");
         }
 
-        var subtitle = string.Join(" � ", subtitleParts);
+        var subtitle = string.Join(" • ", subtitleParts);
 
         // Build tags
         var tags = new List<Tag>();
@@ -72,7 +77,7 @@ internal static class StandingsListItemFactory
         // Crown the reigning champion so the title-holder's row leads with a gold badge.
         if (isChampion)
         {
-            tags.Add(new Tag("🏆 Champions")
+            tags.Add(new Tag("🏆 2026 Champions")
             {
                 Background = ColorHelpers.FromArgb(255, 255, 215, 0), // Gold
                 Foreground = ColorHelpers.FromArgb(255, 20, 20, 20),  // Near-black
@@ -131,10 +136,12 @@ internal static class StandingsListItemFactory
             Result = CommandResult.Dismiss()
         };
 
-        // Create more commands list
+        // The roster page is the primary command (Enter) and ESPN is the first context item
+        // (Ctrl+Enter). Fall back to ESPN as primary when the feed gives no team id to build
+        // a roster page from.
+        ICommand primaryCommand = viewTeamCommand;
         var moreCommands = new List<IContextItem>();
 
-        // Add roster command if team ID is available
         if (team.Id != null && !string.IsNullOrEmpty(team.DisplayName))
         {
             var rosterPage = new TeamRosterListPage(
@@ -145,10 +152,11 @@ internal static class StandingsListItemFactory
                 Name = $"View {team.ShortDisplayName ?? team.DisplayName} Roster",
                 Icon = new IconInfo(teamLogoUrl)
             };
-            moreCommands.Add(new CommandContextItem(rosterPage));
+            primaryCommand = rosterPage;
+            moreCommands.Add(new CommandContextItem(viewTeamCommand));
         }
 
-        var listItem = new ListItem(viewTeamCommand)
+        var listItem = new ListItem(primaryCommand)
         {
             Title = title,
             Subtitle = subtitle,

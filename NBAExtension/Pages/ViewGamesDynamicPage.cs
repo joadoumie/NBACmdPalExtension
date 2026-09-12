@@ -44,7 +44,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 
     public ViewGamesDynamicPage()
     {
-        Icon = new IconInfo("https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=64&h=64&transparent=true"); 
+        Icon = NbaIcons.LeagueLogo; 
         Title = "View Games";
         Name = "View Games";
     }
