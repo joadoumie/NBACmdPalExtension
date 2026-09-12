@@ -21,6 +21,7 @@ internal static class StandingsListItemFactory
     /// </summary>
     /// <param name="entry">The standings entry.</param>
     /// <param name="conference">The conference name.</param>
+    /// <param name="isChampion">Whether the team is the reigning NBA champion; adds a gold tag.</param>
     /// <returns>A ListItem configured for the standings entry, or null if the data is invalid.</returns>
     public static ListItem? CreateListItem(StandingsEntry entry, string conference, bool isChampion = false)
     {
@@ -64,7 +65,7 @@ internal static class StandingsListItemFactory
             subtitleParts.Add($"Conf: {confRecord}");
         }
 
-        var subtitle = string.Join(" � ", subtitleParts);
+        var subtitle = string.Join(" • ", subtitleParts);
 
         // Build tags
         var tags = new List<Tag>();
@@ -72,7 +73,7 @@ internal static class StandingsListItemFactory
         // Crown the reigning champion so the title-holder's row leads with a gold badge.
         if (isChampion)
         {
-            tags.Add(new Tag("🏆 Champions")
+            tags.Add(new Tag("🏆 2026 Champions")
             {
                 Background = ColorHelpers.FromArgb(255, 255, 215, 0), // Gold
                 Foreground = ColorHelpers.FromArgb(255, 20, 20, 20),  // Near-black
