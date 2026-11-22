@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Keep >= 0.9: Toolkit Section/Separator API used by list pages does not exist in older versions (e.g. 0.6). -->
     <PackageVersion Include="Microsoft.CommandPalette.Extensions" Version="0.9.260303001" />
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0-preview.24508.2" />
     <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
@@ -14,6 +15,7 @@
     <PackageVersion Include="Shmuelie.WinRTServer" Version="2.1.1" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
     <PackageVersion Include="System.Text.Json" Version="9.0.8" />
+    <!-- Required unlisted runtime dependency of Microsoft.CommandPalette.Extensions.Toolkit's FuzzyStringMatcher. Do not remove even though no .cs file imports it directly. -->
     <PackageVersion Include="ToolGood.Words" Version="3.1.0.3" />
     <PackageVersion Include="ToolGood.Words.Pinyin" Version="3.1.0.3" />
   </ItemGroup>

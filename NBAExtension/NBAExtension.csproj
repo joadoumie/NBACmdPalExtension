@@ -54,6 +54,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <!-- Required unlisted runtime dependency of CmdPal Toolkit's FuzzyStringMatcher. Looks unused in C# code — do not remove. -->
     <PackageReference Include="ToolGood.Words.Pinyin" />
   </ItemGroup>
   <ItemGroup>
