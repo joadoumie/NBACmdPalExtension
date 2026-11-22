@@ -12,6 +12,7 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data.EspnStandingsResponse;
 using NBAExtension.Helpers;
+using NBAExtension.Settings;
 using System.Text.Json.Serialization;
 
 namespace NBAExtension.Pages;
@@ -19,12 +20,18 @@ namespace NBAExtension.Pages;
 internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDisposable
 {
     private static readonly HttpClient _httpClient = new();
+    private readonly SettingsManager _settings;
     private readonly Dictionary<string, List<(StandingsEntry Entry, int Seed)>> _standings = new();
     private DateTime _lastFetch = DateTime.MinValue;
     private const string EspnStandingsUrl = "https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?region=us&lang=en&contentorigin=espn&type=1&level=2";
 
-    public ViewStandingsDynamicPage()
+    public ViewStandingsDynamicPage(SettingsManager settings)
     {
+        _settings = settings;
+
+        // Items are built per GetItems call, so a refresh is enough to pick up a new command order.
+        _settings.SettingsChanged += Settings_SettingsChanged;
+
         Icon = NbaIcons.LeagueLogo;
         Title = "View NBA Standings";
         Name = "View NBA Standings";
@@ -33,6 +40,8 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
         filters.PropChanged += Filters_PropChanged;
         Filters = filters;
     }
+
+    private void Settings_SettingsChanged(object? sender, EventArgs args) => RaiseItemsChanged();
 
     private void Filters_PropChanged(object sender, IPropChangedEventArgs args) => RaiseItemsChanged();
 
@@ -98,7 +107,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
                         }
                     }
 
-                    var listItem = StandingsListItemFactory.CreateListItem(entry, conference, IsChampionTeam(entry.Team));
+                    var listItem = StandingsListItemFactory.CreateListItem(entry, conference, _settings, IsChampionTeam(entry.Team));
                     if (listItem != null)
                     {
                         sectionItems.Add(listItem);
@@ -203,6 +212,7 @@ internal sealed partial class ViewStandingsDynamicPage : DynamicListPage, IDispo
     public void Dispose()
     {
         // HttpClient is static and shared, so we don't dispose it here
+        _settings.SettingsChanged -= Settings_SettingsChanged;
     }
 }
 

@@ -8,6 +8,7 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data.EspnStandingsResponse;
 using NBAExtension.Pages;
+using NBAExtension.Settings;
 
 namespace NBAExtension.Helpers;
 
@@ -21,9 +22,10 @@ internal static class StandingsListItemFactory
     /// </summary>
     /// <param name="entry">The standings entry.</param>
     /// <param name="conference">The conference name.</param>
+    /// <param name="settings">Extension settings; supplies the user's command order.</param>
     /// <param name="isChampion">Whether the team is the reigning NBA champion; adds a gold tag.</param>
     /// <returns>A ListItem configured for the standings entry, or null if the data is invalid.</returns>
-    public static ListItem? CreateListItem(StandingsEntry entry, string conference, bool isChampion = false)
+    public static ListItem? CreateListItem(StandingsEntry entry, string conference, SettingsManager settings, bool isChampion = false)
     {
         if (entry.Team == null || entry.Stats == null || entry.Stats.Count == 0)
         {
@@ -136,33 +138,35 @@ internal static class StandingsListItemFactory
             Result = CommandResult.Dismiss()
         };
 
-        // The roster page is the primary command (Enter) and ESPN is the first context item
-        // (Ctrl+Enter). Fall back to ESPN as primary when the feed gives no team id to build
-        // a roster page from.
-        ICommand primaryCommand = viewTeamCommand;
-        var moreCommands = new List<IContextItem>();
+        // Arrange commands in the user's configured order (default: roster on Enter, ESPN on
+        // Ctrl+Enter). ESPN moves up to primary when the feed gives no team id to build a
+        // roster page from.
+        var commands = new Dictionary<StandingsCommandAction, ICommand>
+        {
+            [StandingsCommandAction.ViewOnEspn] = viewTeamCommand,
+        };
 
         if (team.Id != null && !string.IsNullOrEmpty(team.DisplayName))
         {
-            var rosterPage = new TeamRosterListPage(
+            commands[StandingsCommandAction.TeamRoster] = new TeamRosterListPage(
                 team.Id,
                 team.DisplayName,
-                teamLogoUrl)
+                teamLogoUrl,
+                settings)
             {
                 Name = $"View {team.ShortDisplayName ?? team.DisplayName} Roster",
                 Icon = new IconInfo(teamLogoUrl)
             };
-            primaryCommand = rosterPage;
-            moreCommands.Add(new CommandContextItem(viewTeamCommand));
         }
 
-        var listItem = new ListItem(primaryCommand)
+        var ordered = settings.Standings.Arrange(commands);
+        var listItem = new ListItem(ordered[0])
         {
             Title = title,
             Subtitle = subtitle,
             Icon = new IconInfo(teamLogoUrl),
             Tags = tags.ToArray(),
-            MoreCommands = moreCommands.ToArray()
+            MoreCommands = ordered.Skip(1).Select(c => (IContextItem)new CommandContextItem(c)).ToArray(),
         };
 
         return listItem;

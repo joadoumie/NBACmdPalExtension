@@ -129,6 +129,10 @@ Option 1.
 6. Right-click or use context menu to **view team rosters** or **statistical leaders**
 7. In **View NBA Standings**, press Enter on a team to open its roster, or Ctrl+Enter for the team's ESPN page
 
+### Customizing command order
+
+Open **Command Palette Settings → Extensions → NBA Command Palette Extension** to choose which command runs on **Enter** (primary), which runs on **Ctrl+Enter** (secondary), and the order of the rest of the context menu — separately for **View NBA Games**, **View NBA Standings**, and **Team Roster**. Picking a command that's already in another slot swaps the two; click **Save** to apply, or **Reset to default** on a group to restore it.
+
 ### Search Tips
 
 - Type team names: `lakers`, `warriors`, `celtics`

@@ -14,6 +14,7 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data.EspnScheduleResponse;
 using NBAExtension.Helpers;
+using NBAExtension.Settings;
 using System.Text.Json.Serialization;
 
 namespace NBAExtension;
@@ -22,7 +23,10 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 {
     private static readonly HttpClient _httpClient = new();
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private readonly List<(ListItem Item, DateTime Date, string DateLabel)> _lastGames = [];
+    private readonly SettingsManager _settings;
+    private readonly List<(Game Game, DateTime Date, string DateLabel)> _games = [];
+    private List<(ListItem Item, DateTime Date, string DateLabel)> _lastGames = [];
+    private volatile bool _itemsStale;
     private DateTime _lastFetch = DateTime.MinValue;
     private const string EspnApiUrl = "https://cdn.espn.com/core/nba/schedule?xhr=1&render=false&device=desktop&userab=18";
 
@@ -42,11 +46,35 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
                $"&userab=18";
     }
 
-    public ViewGamesDynamicPage()
+    public ViewGamesDynamicPage(SettingsManager settings)
     {
-        Icon = NbaIcons.LeagueLogo; 
+        _settings = settings;
+        _settings.SettingsChanged += Settings_SettingsChanged;
+
+        Icon = NbaIcons.LeagueLogo;
         Title = "View Games";
         Name = "View Games";
+    }
+
+    private void Settings_SettingsChanged(object? sender, EventArgs args)
+    {
+        // Rebuild list items from the cached games so the new command order applies without refetching.
+        _itemsStale = true;
+        RaiseItemsChanged();
+    }
+
+    private void RebuildItems()
+    {
+        var items = new List<(ListItem Item, DateTime Date, string DateLabel)>(_games.Count);
+        foreach (var (game, date, dateLabel) in _games)
+        {
+            if (GameListItemFactory.CreateListItem(game, _settings) is { } listItem)
+            {
+                items.Add((listItem, date, dateLabel));
+            }
+        }
+
+        _lastGames = items;
     }
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
@@ -60,6 +88,13 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
             var task = FetchGamesAsync();
             task.ConfigureAwait(false);
             task.Wait();
+            _itemsStale = true;
+        }
+
+        if (_itemsStale)
+        {
+            _itemsStale = false;
+            RebuildItems();
         }
 
         var searchText = SearchText ?? string.Empty;
@@ -102,7 +137,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
 
     private async Task FetchGamesAsync()
     {
-        _lastGames.Clear();
+        _games.Clear();
         _lastFetch = DateTime.UtcNow;
 
         try
@@ -148,20 +183,16 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
                         var game = JsonSerializer.Deserialize(gameElement.GetRawText(), GameJsonContext.Default.Game);
                         if (game != null)
                         {
-                            var listItem = GameListItemFactory.CreateListItem(game);
-                            if (listItem != null)
+                            DateTime gameDate = DateTime.MaxValue;
+                            string dateLabel = dateKey;
+                            if (DateTime.TryParse(game.Date, out var parsedDate))
                             {
-                                DateTime gameDate = DateTime.MaxValue;
-                                string dateLabel = dateKey;
-                                if (DateTime.TryParse(game.Date, out var parsedDate))
-                                {
-                                    gameDate = parsedDate;
-                                    var (label, _) = GameListItemFactory.FormatGameDateTime(game.Date);
-                                    dateLabel = label;
-                                }
-
-                                _lastGames.Add((listItem, gameDate, dateLabel));
+                                gameDate = parsedDate;
+                                var (label, _) = GameListItemFactory.FormatGameDateTime(game.Date);
+                                dateLabel = label;
                             }
+
+                            _games.Add((game, gameDate, dateLabel));
                         }
                     }
                     catch (Exception ex)
@@ -171,7 +202,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"Successfully loaded {_lastGames.Count} games");
+            System.Diagnostics.Debug.WriteLine($"Successfully loaded {_games.Count} games");
         }
         catch (JsonException jsonEx)
         {
@@ -186,6 +217,7 @@ internal sealed partial class ViewGamesDynamicPage : DynamicListPage, IDisposabl
     public void Dispose()
     {
         // HttpClient is static and shared, so we don't dispose it here
+        _settings.SettingsChanged -= Settings_SettingsChanged;
     }
 }
 
