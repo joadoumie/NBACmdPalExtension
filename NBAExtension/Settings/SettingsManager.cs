@@ -29,13 +29,14 @@ internal sealed class SettingsManager
     {
         _filePath = filePath;
 
-        // Default orders match the extension's behavior before command order was configurable.
+        // Definition order is the default order. Games open leaders in-palette on Enter (ESPN on
+        // Ctrl+Enter); games without leader data fall back to ESPN on Enter.
         Games = new ActionOrderGroup<GameCommandAction>(
             "games",
             "View NBA Games",
             "Commands for each game in the schedule.",
-            (GameCommandAction.ViewOnEspn, "espn", "View on ESPN"),
             (GameCommandAction.TeamLeaders, "leaders", "View Team / Game Leaders"),
+            (GameCommandAction.ViewOnEspn, "espn", "View on ESPN"),
             (GameCommandAction.HomeTeamRoster, "home_roster", "View Home Team Roster"),
             (GameCommandAction.AwayTeamRoster, "away_roster", "View Away Team Roster"));
 
