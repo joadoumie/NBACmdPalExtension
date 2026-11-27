@@ -13,6 +13,7 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data.EspnRosterResponse;
 using NBAExtension.Helpers;
+using NBAExtension.Settings;
 
 namespace NBAExtension.Pages;
 
@@ -22,11 +23,13 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
     private readonly string _teamId;
     private readonly string _teamName;
     private readonly string _teamLogo;
+    private readonly SettingsManager _settings;
     private List<RosterAthlete>? _roster;
     private bool _isLoaded;
 
-    public TeamRosterListPage(string teamId, string teamName, string teamLogo)
+    public TeamRosterListPage(string teamId, string teamName, string teamLogo, SettingsManager settings)
     {
+        _settings = settings;
         _teamId = teamId ?? throw new ArgumentNullException(nameof(teamId));
         _teamName = teamName ?? "Team";
         _teamLogo = teamLogo ?? "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png";
@@ -131,20 +134,16 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
                 }
             }
 
-            var playerUrl = athlete.Links?
-                .FirstOrDefault(link => link.Rel?.Contains("playercard") == true)?.Href
-                ?? $"https://www.espn.com/nba/player/_/id/{athlete.Id}";
+            // First command runs on Enter; the rest go to the context menu (the first of those gets Ctrl+Enter).
+            var ordered = _settings.Roster.Arrange(CreatePlayerCommands(athlete));
 
-            var command = new OpenUrlCommand(playerUrl) { Name = "View Player on ESPN" };
-            var moreCommands = CreatePlayerContextItems(athlete);
-
-            var listItem = new ListItem(command)
+            var listItem = new ListItem(ordered[0].Command)
             {
                 Title = athlete.DisplayName ?? athlete.FullName ?? "Unknown Player",
                 Subtitle = descriptionParts.Count > 0 ? string.Join(" • ", descriptionParts) : string.Empty,
                 Icon = new IconInfo(athlete.Headshot?.Href ?? _teamLogo),
                 Tags = tags.Count > 0 ? tags.ToArray() : Array.Empty<Tag>(),
-                MoreCommands = moreCommands.Length > 0 ? moreCommands : Array.Empty<IContextItem>(),
+                MoreCommands = ordered.Skip(1).Select(c => (IContextItem)new CommandContextItem(c.Command) { Icon = c.Icon }).ToArray(),
                 Details = CreatePlayerDetails(athlete)
             };
 
@@ -308,60 +307,49 @@ internal sealed partial class TeamRosterListPage : DynamicListPage
         return details;
     }
 
-    private static IContextItem[] CreatePlayerContextItems(RosterAthlete athlete)
+    private static Dictionary<RosterCommandAction, (ICommand Command, IconInfo? Icon)> CreatePlayerCommands(RosterAthlete athlete)
     {
-        if (athlete.Links == null || athlete.Links.Count == 0)
-        {
-            return Array.Empty<IContextItem>();
-        }
+        var playerUrl = athlete.Links?
+            .FirstOrDefault(link => link.Rel?.Contains("playercard") == true)?.Href
+            ?? $"https://www.espn.com/nba/player/_/id/{athlete.Id}";
 
-        var contextItems = new List<IContextItem>();
+        var commands = new Dictionary<RosterCommandAction, (ICommand Command, IconInfo? Icon)>
+        {
+            [RosterCommandAction.PlayerProfile] = (new OpenUrlCommand(playerUrl) { Name = "View Player on ESPN" }, null),
+        };
 
         // Define the links we want to show and their icons
         var linkConfigs = new[]
         {
-            new { Rel = "stats", Name = "View Stats", Icon = "\uE9D9" }, // Chart icon
-            new { Rel = "advancedstats", Name = "View Advanced Stats", Icon = "\uE9D2" }, // AreaChart icon
-            new { Rel = "gamelog", Name = "View Game Log", Icon = "\uE81C" }, // Calendar icon
-            new { Rel = "news", Name = "View News", Icon = "\uE789" }, // News icon
-            new { Rel = "bio", Name = "View Biography", Icon = "\uE77B" }, // Contact icon
-            new { Rel = "splits", Name = "View Splits", Icon = "\uE8BC" }, // Split view icon
+            new { Action = RosterCommandAction.Stats, Rel = "stats", Name = "View Stats", Icon = "\uE9D9" }, // Chart icon
+            new { Action = RosterCommandAction.AdvancedStats, Rel = "advancedstats", Name = "View Advanced Stats", Icon = "\uE9D2" }, // AreaChart icon
+            new { Action = RosterCommandAction.GameLog, Rel = "gamelog", Name = "View Game Log", Icon = "\uE81C" }, // Calendar icon
+            new { Action = RosterCommandAction.News, Rel = "news", Name = "View News", Icon = "\uE789" }, // News icon
+            new { Action = RosterCommandAction.Biography, Rel = "bio", Name = "View Biography", Icon = "\uE77B" }, // Contact icon
+            new { Action = RosterCommandAction.Splits, Rel = "splits", Name = "View Splits", Icon = "\uE8BC" }, // Split view icon
         };
 
         foreach (var config in linkConfigs)
         {
-            var link = athlete.Links.FirstOrDefault(l =>
-                l.Rel?.Any(r => r.Equals(config.Rel, StringComparison.OrdinalIgnoreCase)) == true);
+            var href = athlete.Links?.FirstOrDefault(l =>
+                l.Rel?.Any(r => r.Equals(config.Rel, StringComparison.OrdinalIgnoreCase)) == true)?.Href;
 
-            if (link != null && !string.IsNullOrEmpty(link.Href))
-            {
-                contextItems.Add(new CommandContextItem(new OpenUrlCommand(link.Href)
-                {
-                    Name = config.Name,
-                    Result = CommandResult.Dismiss()
-                })
-                {
-                    Icon = new IconInfo(config.Icon)
-                });
-            }
-            else if (config.Rel == "advancedstats" && !string.IsNullOrEmpty(athlete.Id))
+            if (string.IsNullOrEmpty(href) && config.Action == RosterCommandAction.AdvancedStats && !string.IsNullOrEmpty(athlete.Id))
             {
                 // Fallback: Construct advanced stats URL manually if not provided by API
                 var nameSlug = CreateUrlSlug(athlete.DisplayName ?? athlete.FullName ?? "player");
-                var advancedStatsUrl = $"https://www.espn.com/nba/player/advancedstats/_/id/{athlete.Id}/{nameSlug}";
+                href = $"https://www.espn.com/nba/player/advancedstats/_/id/{athlete.Id}/{nameSlug}";
+            }
 
-                contextItems.Add(new CommandContextItem(new OpenUrlCommand(advancedStatsUrl)
-                {
-                    Name = config.Name,
-                    Result = CommandResult.Dismiss()
-                })
-                {
-                    Icon = new IconInfo(config.Icon)
-                });
+            if (!string.IsNullOrEmpty(href))
+            {
+                commands[config.Action] = (
+                    new OpenUrlCommand(href) { Name = config.Name, Result = CommandResult.Dismiss() },
+                    new IconInfo(config.Icon));
             }
         }
 
-        return contextItems.ToArray();
+        return commands;
     }
 
     private static string CreateUrlSlug(string name)

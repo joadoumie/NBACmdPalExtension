@@ -18,7 +18,7 @@
 
 NBA Command Palette Extension brings real-time NBA game information directly into your Windows Command Palette. Stay updated on games, scores, schedules, standings, and player stats without leaving your workflow.
 
-> **⚠️ Work in Progress**: This extension is actively being developed and is available on the [Microsoft Store](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension). Standings now open team rosters with Enter, and icons no longer depend on network access. Next up: favorite-team preferences and auto-refresh for live games.
+> **⚠️ Work in Progress**: This extension is actively being developed and is available on the [Microsoft Store](https://apps.microsoft.com/detail/joadoumie.NBACommandPaletteExtension). Choose which command runs on Enter for games, standings, and rosters in the extension settings. Next up: favorite-team preferences and auto-refresh for live games.
 
 ## ✨ Features
 
@@ -32,7 +32,8 @@ Browse all NBA games for the upcoming week with rich details:
 - **Team logos** and visual indicators
 - **Smart search** with fuzzy matching to quickly find your favorite teams
 - **Date and time** in EST with automatic timezone conversion
-- **Direct links** to ESPN for full game details
+- **Enter** opens Team / Game Leaders right in the palette; **Ctrl+Enter** opens the game on ESPN
+- **Configurable command order**: pick what Enter, Ctrl+Enter, and the context menu do in the extension settings
 
 <div align="center">
   <img width="1380" height="830" alt="image" src="https://github.com/user-attachments/assets/908a8215-e070-4371-bbf4-c5cc12374e26" />
@@ -71,12 +72,11 @@ Check the playoff picture at a glance:
 - **Reigning champion** tagged with a gold 🏆 badge
 - **Team logos** on every row
 
-> **New in 0.0.5.0:**
-> - Standings rows now open the team's **roster on Enter**; the ESPN team page moves to **Ctrl+Enter**.
-> - **Rosters load again.** ESPN began rejecting the endpoint the extension used, which showed as "No roster data available"; rosters now come from the same host as standings.
-> - **Icons work offline.** The league logo ships inside the package, so the top-level commands and page headers no longer depend on ESPN's CDN.
-> - The 2026 championship celebration is retired. The reigning champion keeps a gold **🏆 2026 Champions** tag in the standings.
-> - Preseason polish: the rank is hidden until ESPN reports real seeds, and the standings subtitle separator renders correctly again.
+> **New in 0.0.6.0:**
+> - **Choose your commands.** Command Palette Settings → Extensions → NBA Command Palette Extension now lets you reorder the commands for games, standings, and roster players: click a command to pick it up, then drop it where you want it. The first runs on Enter, the second on Ctrl+Enter.
+> - Games now open **Team / Game Leaders on Enter**; the ESPN game page moves to **Ctrl+Enter**. Prefer the old behavior? Move "View on ESPN" back to the top in settings.
+>
+> **0.0.5.0:** standings open the team roster on Enter, rosters load again after an ESPN endpoint change, and icons work offline.
 >
 > **0.0.3.0:** every list page (Games, Standings, Team Leaders, Rosters) groups its results into labeled sections with headers instead of one flat list.
 
@@ -125,9 +125,13 @@ Option 1.
 2. Type `NBA` or search for **"View Upcoming NBA Games"**
 3. Browse upcoming games sorted by date
 4. Use **fuzzy search** to filter by team name (e.g., type "lakers" or "LAL")
-5. Click any game to **view full details on ESPN**
-6. Right-click or use context menu to **view team rosters** or **statistical leaders**
+5. Press **Enter** on any game to see its **team or game leaders**, or **Ctrl+Enter** to open it on ESPN
+6. Open the context menu (right-click) to **view either team's roster**
 7. In **View NBA Standings**, press Enter on a team to open its roster, or Ctrl+Enter for the team's ESPN page
+
+### Customizing command order
+
+Open **Command Palette Settings → Extensions → NBA Command Palette Extension** to choose which command runs on **Enter** (primary), which runs on **Ctrl+Enter** (secondary), and the order of the rest of the context menu — separately for **View NBA Games**, **View NBA Standings**, and **Team Roster**. Click a command to pick it up, then click one of the **Move here** spots to drop it; changes save immediately. Use **Reset** on a list, or **Reset all to defaults**, to restore the original order.
 
 ### Search Tips
 

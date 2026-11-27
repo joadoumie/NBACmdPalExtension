@@ -6,11 +6,13 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Pages;
 using NBAExtension.Helpers;
+using NBAExtension.Settings;
 
 namespace NBAExtension;
 
 public partial class NBAExtensionCommandsProvider : CommandProvider
 {
+    private readonly SettingsManager _settings = new();
     private readonly ICommandItem[] _commands;
 
     // Return more commands like GH links etc. 
@@ -27,9 +29,10 @@ public partial class NBAExtensionCommandsProvider : CommandProvider
     {
         DisplayName = "NBA Command Palette Extension";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
+        Settings = new CommandOrderSettingsPage(_settings);
         _commands = [
-            new CommandItem(new ViewGamesDynamicPage()) { Title = "View NBA Games", Icon = NbaIcons.LeagueLogo, MoreCommands = GetAboutContextItems() },
-            new CommandItem(new ViewStandingsDynamicPage()) { Title = "View NBA Standings", Icon = NbaIcons.LeagueLogo, MoreCommands = GetAboutContextItems() },
+            new CommandItem(new ViewGamesDynamicPage(_settings)) { Title = "View NBA Games", Icon = NbaIcons.LeagueLogo, MoreCommands = GetAboutContextItems() },
+            new CommandItem(new ViewStandingsDynamicPage(_settings)) { Title = "View NBA Standings", Icon = NbaIcons.LeagueLogo, MoreCommands = GetAboutContextItems() },
         ];
     }
 

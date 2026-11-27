@@ -10,6 +10,7 @@ using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 using NBAExtension.Data.EspnScheduleResponse;
 using NBAExtension.Pages;
+using NBAExtension.Settings;
 
 namespace NBAExtension.Helpers;
 
@@ -22,8 +23,9 @@ internal static class GameListItemFactory
     /// Creates a ListItem from a Game object.
     /// </summary>
     /// <param name="game">The game data.</param>
+    /// <param name="settings">Extension settings; supplies the user's command order.</param>
     /// <returns>A ListItem configured for the game, or null if the game data is invalid.</returns>
-    public static ListItem? CreateListItem(Game game)
+    public static ListItem? CreateListItem(Game game, SettingsManager settings)
     {
         if (game.Competitions == null || game.Competitions.Count == 0)
         {
@@ -110,9 +112,11 @@ internal static class GameListItemFactory
         tags.Add(new Tag(gameDate));
         tags.Add(new Tag(gameTime));
 
-        // Create commands list
-        var viewOnEspnCommand = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN", Result = CommandResult.Dismiss() };
-        var moreCommands = new List<CommandContextItem>();
+        // Collect the commands this game offers, then arrange them in the user's configured order.
+        var commands = new Dictionary<GameCommandAction, ICommand>
+        {
+            [GameCommandAction.ViewOnEspn] = new OpenUrlCommand($"https://www.espn.com/nba/game/_/gameId/{game.Id}") { Name = "View on ESPN", Result = CommandResult.Dismiss() },
+        };
 
         // Add leaders command if data is available
         if (HasLeaderData(competition))
@@ -127,42 +131,44 @@ internal static class GameListItemFactory
                 _ => "View Team Leaders"
             };
 
-            moreCommands.Add(new CommandContextItem(new TeamLeadersPage(game) { Name = commandName }));
+            commands[GameCommandAction.TeamLeaders] = new TeamLeadersPage(game) { Name = commandName };
         }
 
         // Add roster commands for both teams
         if (homeTeam.Team.Id != null && !string.IsNullOrEmpty(homeTeam.Team.DisplayName))
         {
-            var homeRosterPage = new TeamRosterListPage(
+            commands[GameCommandAction.HomeTeamRoster] = new TeamRosterListPage(
                 homeTeam.Team.Id,
                 homeTeam.Team.DisplayName,
-                GetTeamLogo(homeTeam.Team))
+                GetTeamLogo(homeTeam.Team),
+                settings)
             {
                 Name = $"View {homeTeam.Team.ShortDisplayName} Roster",
                 Icon = new IconInfo(GetTeamLogo(homeTeam.Team))
             };
-            moreCommands.Add(new CommandContextItem(homeRosterPage));
         }
 
         if (awayTeam.Team.Id != null && !string.IsNullOrEmpty(awayTeam.Team.DisplayName))
         {
-            var awayRosterPage = new TeamRosterListPage(
+            commands[GameCommandAction.AwayTeamRoster] = new TeamRosterListPage(
                 awayTeam.Team.Id,
                 awayTeam.Team.DisplayName,
-                GetTeamLogo(awayTeam.Team))
+                GetTeamLogo(awayTeam.Team),
+                settings)
             {
                 Name = $"View {awayTeam.Team.ShortDisplayName} Roster",
                 Icon = new IconInfo(GetTeamLogo(awayTeam.Team))
             };
-            moreCommands.Add(new CommandContextItem(awayRosterPage));
         }
 
-        var listItem = new ListItem(viewOnEspnCommand)
+        // First command runs on Enter; the rest go to the context menu (the first of those gets Ctrl+Enter).
+        var ordered = settings.Games.Arrange(commands);
+        var listItem = new ListItem(ordered[0])
         {
             Title = title,
             Icon = new IconInfo(GetTeamLogo(homeTeam.Team)),
             Tags = tags.ToArray(),
-            MoreCommands = moreCommands.ToArray() 
+            MoreCommands = ordered.Skip(1).Select(c => (IContextItem)new CommandContextItem(c)).ToArray(),
         };
 
         return listItem;
