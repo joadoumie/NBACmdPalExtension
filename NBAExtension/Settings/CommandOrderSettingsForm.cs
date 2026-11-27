@@ -2,7 +2,7 @@
 // The Microsoft Corporation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
@@ -13,25 +13,27 @@ using Microsoft.CommandPalette.Extensions.Toolkit;
 namespace NBAExtension.Settings;
 
 /// <summary>
-/// Adaptive Card form that lets users choose the command order for each list page.
+/// Adaptive Card that lets users reorder each list page's commands with a pick-up-and-drop
+/// interaction, the closest Adaptive Cards gets to drag and drop.
 /// </summary>
 /// <remarks>
-/// Each list page gets its own group, laid out like Command Palette's own settings cards:
-/// one row per command slot, label on the left and a dropdown on the right. Choosing a
-/// command that already sits in another slot swaps the two, so the order is always valid
-/// and the user never has to juggle duplicates. Edits apply when the user clicks Save.
+/// Every command is a row. Clicking a row picks it up: the row highlights and "Move here"
+/// drop targets appear in the gaps between the other rows. Clicking a drop target moves the
+/// command there and saves immediately; clicking the picked row again cancels. The card has
+/// no inputs, so a command can never appear twice. Each click re-renders this form in place
+/// by updating <see cref="FormContent.TemplateJson"/>; the page itself is not reloaded.
 /// </remarks>
 [SuppressMessage("Performance", "CA1859", Justification = "Card helpers return JsonNode on purpose so JsonArray binds to its AOT-safe Add(JsonNode) overload instead of the generic Add<T>.")]
 internal sealed partial class CommandOrderSettingsForm : FormContent
 {
-    private const string SaveOp = "save";
-    private const string ResetOp = "reset";
-    private static readonly TimeSpan StatusLifetime = TimeSpan.FromSeconds(10);
-    private static readonly string[] OrdinalWords = ["Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
+    private const string Grip = "≡"; // ≡, the classic reorder handle
 
     private readonly SettingsManager _settings;
-    private string? _status;
-    private DateTime _statusAt;
+    private readonly object _stateLock = new();
+    private readonly Dictionary<string, string> _groupNotes = [];
+    private string? _pickedGroupId;
+    private string? _pickedKey;
+    private string? _footerNote;
 
     public CommandOrderSettingsForm(SettingsManager settings)
     {
@@ -39,68 +41,92 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         Refresh();
     }
 
-    /// <summary>Raised after the user submits the form, once settings are applied.</summary>
-    public event EventHandler? Submitted;
-
-    /// <summary>Rebuilds the card from the current settings.</summary>
-    public void Refresh()
+    /// <summary>Drops any in-progress move and confirmation notes, e.g. when the page is reopened.</summary>
+    public void ResetTransientState()
     {
-        TemplateJson = BuildCard().ToJsonString();
+        lock (_stateLock)
+        {
+            ClearTransientState();
+            Refresh();
+        }
     }
 
     public override ICommandResult SubmitForm(string inputs, string data)
     {
-        var inputValues = ParseObject(inputs);
-        var dataValues = ParseObject(data);
-        var op = GetString(dataValues, "op") ?? SaveOp;
-        var resetGroupId = op == ResetOp ? GetString(dataValues, "group") : null;
-        var baseline = dataValues?["baseline"] as JsonObject;
+        var payload = ParseObject(data);
+        var op = GetString(payload, "op");
+        var group = _settings.Groups.FirstOrDefault(g => g.Id == GetString(payload, "group"));
+        var key = GetString(payload, "key");
 
-        _settings.Update(settings =>
+        lock (_stateLock)
         {
-            var changed = false;
-            foreach (var group in settings.Groups)
+            var wasPicked = group?.Id == _pickedGroupId && key == _pickedKey;
+            ClearTransientState();
+
+            switch (op)
             {
-                // Always keep pending edits from every group, including on Reset, so
-                // clicking one group's Reset never throws away work in another group.
-                var requested = Enumerable.Range(0, group.Choices.Count)
-                    .Select(slot => GetString(inputValues, InputId(group, slot)))
-                    .ToArray();
-                var baselineKeys = (baseline?[group.Id] as JsonArray)?
-                    .Select(node => node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : null)
-                    .ToArray();
+                case "pick" when group != null && key != null && !wasPicked:
+                    // Clicking the picked row again falls through as a cancel.
+                    _pickedGroupId = group.Id;
+                    _pickedKey = key;
+                    break;
 
-                changed |= group.Apply(baselineKeys, requested);
+                case "drop" when group != null && key != null && GetInt(payload, "gap") is { } gap:
+                    _settings.Update(_ => group.MoveTo(key, gap));
+                    var position = group.CurrentKeys.ToList().IndexOf(key);
+                    var title = TitleOf(group, key);
+                    _groupNotes[group.Id] = position switch
+                    {
+                        0 => $"✓ “{title}” now runs on Enter.",
+                        1 => $"✓ “{title}” now runs on Ctrl+Enter.",
+                        _ => $"✓ “{title}” moved to position {position + 1}.",
+                    };
+                    break;
 
-                if (group.Id == resetGroupId)
-                {
-                    changed |= group.Reset();
-                }
+                case "reset" when group != null:
+                    _settings.Update(_ => group.Reset());
+                    _groupNotes[group.Id] = "✓ Restored the default order.";
+                    break;
+
+                case "resetAll":
+                    _settings.Update(s => s.Groups.Aggregate(false, (changed, g) => g.Reset() | changed));
+                    _footerNote = "✓ Every list is back to its default order.";
+                    break;
             }
 
-            return changed;
-        });
+            Refresh();
+        }
 
-        var resetGroup = _settings.Groups.FirstOrDefault(g => g.Id == resetGroupId);
-        _status = resetGroup != null ? $"{resetGroup.Title} restored to defaults" : "Changes saved";
-        _statusAt = DateTime.UtcNow;
-
-        Refresh();
-        Submitted?.Invoke(this, EventArgs.Empty);
         return CommandResult.KeepOpen();
+    }
+
+    private void ClearTransientState()
+    {
+        _pickedGroupId = null;
+        _pickedKey = null;
+        _footerNote = null;
+        _groupNotes.Clear();
+    }
+
+    private void Refresh()
+    {
+        TemplateJson = BuildCard().ToJsonString();
     }
 
     private JsonObject BuildCard()
     {
         var body = Nodes(TextBlock(
-            "Pick the order of commands for each list. The first command runs on Enter, the second on Ctrl+Enter, " +
-            "and the rest appear in the context menu. Choosing a command that's in another slot swaps the two.",
+            "Click a command to pick it up, then choose where to drop it. The first command runs on Enter, " +
+            "the second on Ctrl+Enter, and the rest are listed in the context menu.",
             subtle: true));
 
         foreach (var group in _settings.Groups)
         {
             body.Add(GroupHeader(group));
-            body.Add(GroupRows(group));
+            foreach (var element in GroupRows(group))
+            {
+                body.Add(element);
+            }
         }
 
         body.Add(Footer());
@@ -114,19 +140,36 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         };
     }
 
-    private static JsonNode GroupHeader(IActionOrderGroup group)
+    private JsonNode GroupHeader(IActionOrderGroup group)
     {
-        var columns = Nodes(Column(
-            "stretch",
-            TextBlock(group.Title, size: "Medium", weight: "Bolder"),
-            TextBlock(group.Description, subtle: true, spacing: "None")));
+        var isPicking = _pickedGroupId == group.Id && _pickedKey != null;
 
-        if (!group.IsDefault)
+        JsonNode subtitle;
+        if (isPicking)
+        {
+            subtitle = TextBlock($"Moving “{TitleOf(group, _pickedKey!)}”. Choose a spot, or click it again to cancel.", color: "Accent", spacing: "None");
+        }
+        else if (_groupNotes.TryGetValue(group.Id, out var note))
+        {
+            subtitle = TextBlock(note, color: "Good", spacing: "None");
+        }
+        else
+        {
+            subtitle = TextBlock(group.Description, subtle: true, spacing: "None");
+        }
+
+        var columns = Nodes(Column("stretch", TextBlock(group.Title, size: "Medium", weight: "Bolder"), subtitle));
+
+        if (isPicking)
+        {
+            columns.Add(Column("auto", ActionSet(SubmitAction("Cancel", new JsonObject { ["op"] = "cancel" }))));
+        }
+        else if (!group.IsDefault)
         {
             columns.Add(Column("auto", ActionSet(SubmitAction(
-                "Reset to default",
-                new JsonObject { ["op"] = ResetOp, ["group"] = group.Id },
-                tooltip: $"Restore the default command order for {group.Title}"))));
+                "Reset",
+                new JsonObject { ["op"] = "reset", ["group"] = group.Id },
+                tooltip: $"Restore the default order for {group.Title}"))));
         }
 
         return new JsonObject
@@ -137,76 +180,84 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         };
     }
 
-    private static JsonNode GroupRows(IActionOrderGroup group)
+    private IEnumerable<JsonNode> GroupRows(IActionOrderGroup group)
     {
-        var current = group.CurrentKeys;
-        var rows = new JsonArray();
+        var keys = group.CurrentKeys;
+        var picked = _pickedGroupId == group.Id ? keys.ToList().IndexOf(_pickedKey ?? string.Empty) : -1;
 
-        for (var slot = 0; slot < current.Count; slot++)
+        for (var gap = 0; gap <= keys.Count; gap++)
         {
-            var (label, hint) = SlotText(slot);
-
-            var choices = new JsonArray();
-            foreach (var choice in group.Choices)
+            // Gaps directly above and below the picked row would leave it where it is.
+            if (picked >= 0 && gap != picked && gap != picked + 1)
             {
-                choices.Add((JsonNode)new JsonObject { ["title"] = choice.Title, ["value"] = choice.Key });
+                yield return DropTarget(group, keys[picked], gap, landsAt: gap > picked ? gap - 1 : gap);
             }
 
-            JsonNode row = new JsonObject
+            if (gap < keys.Count)
             {
-                ["type"] = "ColumnSet",
-                ["spacing"] = "Medium",
-                ["columns"] = Nodes(
-                    Column(
-                        "stretch",
-                        TextBlock(label, weight: slot == 0 ? "Bolder" : null),
-                        TextBlock(hint, subtle: true, spacing: "None", size: "Small")),
-                    Column(
-                        "260px",
-                        new JsonObject
-                        {
-                            ["type"] = "Input.ChoiceSet",
-                            ["id"] = InputId(group, slot),
-                            ["style"] = "compact",
-                            ["value"] = current[slot],
-                            ["choices"] = choices,
-                        })),
-            };
-
-            if (slot > 0)
-            {
-                row["separator"] = true;
+                yield return Row(group, keys[gap], gap, isPicked: gap == picked);
             }
+        }
+    }
 
-            rows.Add(row);
+    private static JsonNode Row(IActionOrderGroup group, string key, int position, bool isPicked)
+    {
+        var title = TitleOf(group, key);
+        var hint = isPicked ? "Click to cancel" : KeyHint(position);
+
+        var columns = Nodes(
+            Column("auto", TextBlock(Grip, subtle: !isPicked, color: isPicked ? "Accent" : null, size: "Medium")),
+            Column("stretch", TextBlock(title, weight: isPicked ? "Bolder" : null)));
+
+        if (hint != null)
+        {
+            columns.Add(Column("auto", TextBlock(hint, subtle: true, size: "Small")));
         }
 
         return new JsonObject
         {
             ["type"] = "Container",
-            ["style"] = "emphasis",
+            ["style"] = isPicked ? "accent" : "emphasis",
+            ["roundedCorners"] = true,
+            ["spacing"] = position == 0 ? "Default" : "Small",
+            ["selectAction"] = SubmitAction(
+                isPicked ? $"Cancel moving {title}" : $"Move {title}",
+                new JsonObject { ["op"] = "pick", ["group"] = group.Id, ["key"] = key }),
+            ["items"] = Nodes(new JsonObject
+            {
+                ["type"] = "ColumnSet",
+                ["columns"] = columns,
+            }),
+        };
+    }
+
+    private static JsonNode DropTarget(IActionOrderGroup group, string key, int gap, int landsAt)
+    {
+        var where = KeyHint(landsAt) is { } shortcut ? $"Move here · {shortcut}" : "Move here";
+
+        return new JsonObject
+        {
+            ["type"] = "Container",
             ["spacing"] = "Small",
-            ["items"] = rows,
+            ["roundedCorners"] = true,
+            ["showBorder"] = true,
+            ["selectAction"] = SubmitAction(
+                $"Move {TitleOf(group, key)} to position {landsAt + 1}",
+                new JsonObject { ["op"] = "drop", ["group"] = group.Id, ["key"] = key, ["gap"] = gap }),
+            ["items"] = Nodes(TextBlock($"↓  {where}", color: "Accent", size: "Small", weight: "Bolder", horizontalAlignment: "Center")),
         };
     }
 
     private JsonNode Footer()
     {
-        // The order each group was rendered with, so Save can tell which slots the user changed.
-        var baseline = new JsonObject();
-        foreach (var group in _settings.Groups)
-        {
-            baseline[group.Id] = Nodes(group.CurrentKeys.Select(k => (JsonNode)JsonValue.Create(k)).ToArray());
-        }
-
         var columns = Nodes(Column("auto", ActionSet(SubmitAction(
-            "Save",
-            new JsonObject { ["op"] = SaveOp, ["baseline"] = baseline },
-            style: "positive"))));
+            "Reset all to defaults",
+            new JsonObject { ["op"] = "resetAll" },
+            tooltip: "Restore the default command order for every list"))));
 
-        if (_status != null && DateTime.UtcNow - _statusAt < StatusLifetime)
+        if (_footerNote != null)
         {
-            columns.Add(Column("stretch", TextBlock($"✓ {_status}", subtle: true)));
+            columns.Add(Column("stretch", TextBlock(_footerNote, color: "Good")));
         }
 
         return new JsonObject
@@ -217,14 +268,15 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         };
     }
 
-    private static (string Label, string Hint) SlotText(int slot) => slot switch
+    private static string? KeyHint(int position) => position switch
     {
-        0 => ("Primary command", "Runs on Enter or click"),
-        1 => ("Secondary command", "Runs on Ctrl+Enter"),
-        _ => ($"{(slot - 2 < OrdinalWords.Length ? OrdinalWords[slot - 2] : $"#{slot + 1}")} command", "Shown in the context menu"),
+        0 => "Enter",
+        1 => "Ctrl+Enter",
+        _ => null,
     };
 
-    private static string InputId(IActionOrderGroup group, int slot) => $"{group.Id}.{slot}";
+    private static string TitleOf(IActionOrderGroup group, string key) =>
+        group.Choices.FirstOrDefault(c => c.Key == key).Title ?? key;
 
     // Card elements are built from JsonNode-typed values throughout: JsonArray's generic Add<T>
     // (which collection initializers bind to for derived types) is not trim/AOT safe.
@@ -244,7 +296,7 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         ["actions"] = Nodes(action),
     };
 
-    private static JsonNode SubmitAction(string title, JsonObject data, string? style = null, string? tooltip = null)
+    private static JsonNode SubmitAction(string title, JsonObject data, string? tooltip = null)
     {
         var action = new JsonObject
         {
@@ -252,11 +304,6 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
             ["title"] = title,
             ["data"] = data,
         };
-
-        if (style != null)
-        {
-            action["style"] = style;
-        }
 
         if (tooltip != null)
         {
@@ -266,7 +313,14 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
         return action;
     }
 
-    private static JsonNode TextBlock(string text, bool subtle = false, string? size = null, string? weight = null, string? spacing = null)
+    private static JsonNode TextBlock(
+        string text,
+        bool subtle = false,
+        string? size = null,
+        string? weight = null,
+        string? spacing = null,
+        string? color = null,
+        string? horizontalAlignment = null)
     {
         var block = new JsonObject
         {
@@ -275,26 +329,24 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
             ["wrap"] = true,
         };
 
+        void Set(string name, string? value)
+        {
+            if (value != null)
+            {
+                block[name] = value;
+            }
+        }
+
         if (subtle)
         {
             block["isSubtle"] = true;
         }
 
-        if (size != null)
-        {
-            block["size"] = size;
-        }
-
-        if (weight != null)
-        {
-            block["weight"] = weight;
-        }
-
-        if (spacing != null)
-        {
-            block["spacing"] = spacing;
-        }
-
+        Set("size", size);
+        Set("weight", weight);
+        Set("spacing", spacing);
+        Set("color", color);
+        Set("horizontalAlignment", horizontalAlignment);
         return block;
     }
 
@@ -317,4 +369,7 @@ internal sealed partial class CommandOrderSettingsForm : FormContent
 
     private static string? GetString(JsonObject? obj, string name) =>
         obj?[name] is JsonValue value && value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
+
+    private static int? GetInt(JsonObject? obj, string name) =>
+        obj?[name] is JsonValue value && value.GetValueKind() == JsonValueKind.Number && value.TryGetValue<int>(out var number) ? number : null;
 }

@@ -131,7 +131,7 @@ Option 1.
 
 ### Customizing command order
 
-Open **Command Palette Settings → Extensions → NBA Command Palette Extension** to choose which command runs on **Enter** (primary), which runs on **Ctrl+Enter** (secondary), and the order of the rest of the context menu — separately for **View NBA Games**, **View NBA Standings**, and **Team Roster**. Picking a command that's already in another slot swaps the two; click **Save** to apply, or **Reset to default** on a group to restore it.
+Open **Command Palette Settings → Extensions → NBA Command Palette Extension** to choose which command runs on **Enter** (primary), which runs on **Ctrl+Enter** (secondary), and the order of the rest of the context menu — separately for **View NBA Games**, **View NBA Standings**, and **Team Roster**. Click a command to pick it up, then click one of the **Move here** spots to drop it; changes save immediately. Use **Reset** on a list, or **Reset all to defaults**, to restore the original order.
 
 ### Search Tips
 

@@ -39,12 +39,12 @@ internal interface IActionOrderGroup
     bool IsDefault { get; }
 
     /// <summary>
-    /// Applies the slot selections from the settings form.
+    /// Moves a command into a gap between commands, like dropping a dragged item.
     /// </summary>
-    /// <param name="baselineKeys">The order the form was rendered with.</param>
-    /// <param name="requestedKeys">The key the user picked for each slot.</param>
+    /// <param name="key">The command to move.</param>
+    /// <param name="gap">The gap to drop into: 0 is before the first command, Count is after the last.</param>
     /// <returns>True if the order changed.</returns>
-    bool Apply(IReadOnlyList<string?>? baselineKeys, IReadOnlyList<string?> requestedKeys);
+    bool MoveTo(string key, int gap);
 
     /// <summary>Restores the default order.</summary>
     /// <returns>True if the order changed.</returns>
@@ -117,30 +117,27 @@ internal sealed class ActionOrderGroup<T> : IActionOrderGroup
         return result;
     }
 
-    public bool Apply(IReadOnlyList<string?>? baselineKeys, IReadOnlyList<string?> requestedKeys)
+    public bool MoveTo(string key, int gap)
     {
-        // Start from what the form displayed so the diff below matches what the user saw.
-        var baseline = baselineKeys is { Count: > 0 } ? Normalize(baselineKeys) : _order;
-        var order = (T[])baseline.Clone();
-
-        // Each slot whose dropdown the user changed takes the chosen command, which swaps
-        // places with whatever slot held it. Earlier slots win if two edits collide.
-        for (var slot = 0; slot < order.Length && slot < requestedKeys.Count; slot++)
+        if (TryParse(key) is not { } action)
         {
-            if (TryParse(requestedKeys[slot]) is not { } requested ||
-                EqualityComparer<T>.Default.Equals(requested, baseline[slot]))
-            {
-                continue;
-            }
-
-            var from = Array.IndexOf(order, requested);
-            if (from >= 0 && from != slot)
-            {
-                (order[slot], order[from]) = (order[from], order[slot]);
-            }
+            return false;
         }
 
-        return SetOrder(order);
+        var order = _order.ToList();
+        var from = order.IndexOf(action);
+        gap = Math.Clamp(gap, 0, order.Count);
+
+        // Removing the item first shifts every later gap up by one.
+        var to = gap > from ? gap - 1 : gap;
+        if (to == from)
+        {
+            return false;
+        }
+
+        order.RemoveAt(from);
+        order.Insert(to, action);
+        return SetOrder(order.ToArray());
     }
 
     public bool Reset() => SetOrder(DefaultOrder());

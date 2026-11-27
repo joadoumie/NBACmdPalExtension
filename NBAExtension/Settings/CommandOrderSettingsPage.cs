@@ -21,16 +21,18 @@ internal sealed partial class CommandOrderSettingsPage : ContentPage, ICommandSe
         Title = "NBA Extension Settings";
         Icon = NbaIcons.LeagueLogo;
 
+        // The form re-renders itself in place on every click (via TemplateJson). Don't
+        // RaiseItemsChanged here: that makes Command Palette rebuild the whole card.
         _form = new CommandOrderSettingsForm(settings);
-        _form.Submitted += (_, _) => RaiseItemsChanged();
     }
 
     public IContentPage SettingsPage => this;
 
     public override IContent[] GetContent()
     {
-        // Rebuild so a stale "Changes saved" note doesn't linger when the page is reopened.
-        _form.Refresh();
+        // Called when the settings page opens: start fresh, without a half-finished move
+        // or a confirmation note left over from the last visit.
+        _form.ResetTransientState();
         return [_form];
     }
 }
